@@ -1,3 +1,4 @@
+import 'package:chatbot/fill_krs.dart';
 import 'package:chatbot/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'forgot_password_screen.dart';
@@ -85,7 +86,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (_) => const HomeScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const PengisianKrsPage(),
+                        ),
                       );
                     },
                     child: const Text('Login', style: TextStyle(fontSize: 16)),
