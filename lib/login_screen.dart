@@ -1,5 +1,6 @@
 import 'package:chatbot/fill_krs.dart';
 import 'package:chatbot/home_screen.dart';
+import 'package:chatbot/otp_screen.dart';
 import 'package:flutter/material.dart';
 import 'forgot_password_screen.dart';
 
@@ -87,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const PengisianKrsPage(),
+                          builder: (_) => const OtpVerificationScreen(),
                         ),
                       );
                     },
