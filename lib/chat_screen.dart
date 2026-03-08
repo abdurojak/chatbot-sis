@@ -1,5 +1,7 @@
-import 'package:chatbot/login_screen.dart';
+import 'package:chatbot/component/chat_helper.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class ChatDetailPage extends StatefulWidget {
   const ChatDetailPage({super.key});
@@ -12,6 +14,11 @@ class ChatDetailPageState extends State<ChatDetailPage> {
   static const Color primaryBlue = Color(0xFF1E73BE);
 
   late List<Widget> chatWidgets;
+
+  final TextEditingController _controller = TextEditingController();
+  final String senderId = "test_user";
+
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -29,14 +36,97 @@ class ChatDetailPageState extends State<ChatDetailPage> {
 
       const SizedBox(height: 12),
 
-      _userBubble("Kartu Rencana Studi"),
+      // _userBubble("Kartu Rencana Studi"),
 
-      const SizedBox(height: 12),
+      // const SizedBox(height: 12),
 
-      _botMenu(),
+      // _botMenu(),
 
-      const SizedBox(height: 12),
+      // const SizedBox(height: 12),
     ];
+  }
+
+  void addBotWidgets(List<Widget> widgets) {
+    setState(() {
+      chatWidgets.addAll(widgets);
+      chatWidgets.add(const SizedBox(height: 12));
+    });
+  }
+
+  Future<void> sendMessage(String message) async {
+    setState(() {
+      chatWidgets.add(_userBubble(message));
+      chatWidgets.add(const SizedBox(height: 12));
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
+
+    final url = Uri.parse("http://103.28.161.71:5005/webhooks/rest/webhook");
+    // final url = Uri.parse("https://chatbot-sis.free.beeceptor.com");
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"sender": senderId, "message": message}),
+    );
+
+    final data = jsonDecode(response.body) as List;
+
+    for (var item in data) {
+      if (item["text"] != null) {
+        setState(() {
+          chatWidgets.add(_botBubble(item["text"]));
+          chatWidgets.add(const SizedBox(height: 12));
+        });
+      }
+
+      if (item["buttons"] != null) {
+        setState(() {
+          chatWidgets.add(_botMenuFromApi(item["buttons"]));
+          chatWidgets.add(const SizedBox(height: 12));
+        });
+      }
+    }
+  }
+
+  Widget _botMenuFromApi(List buttons) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEAF1FF),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: buttons.map<Widget>((btn) {
+            return _menuItem(
+              title: btn["title"],
+              onTap: () async {
+                final payload = btn["payload"];
+
+                final handled = await BotActionHandle.handle(
+                  context,
+                  payload: payload,
+                  sendMessage: sendMessage,
+                  addBotWidgets: addBotWidgets,
+                );
+
+                if (!handled) {
+                  sendMessage(payload);
+                }
+              },
+            );
+          }).toList(),
+        ),
+      ),
+    );
   }
 
   @override
@@ -51,6 +141,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
           // ================= CHAT CONTENT =================
           Expanded(
             child: ListView(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
               children: chatWidgets,
             ),
@@ -123,50 +214,6 @@ class ChatDetailPageState extends State<ChatDetailPage> {
     );
   }
 
-  Widget _botBubbleTransaksiKrs(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEAF1FF),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Silakan pilih mata kuliah yang akan kamu ambil pada semester ini.\n\n"
-            "Setelah selesai, ajukan KRS untuk diproses oleh Dosen Pembimbing Akademik.",
-            style: TextStyle(fontSize: 14),
-          ),
-          const SizedBox(height: 16),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryBlue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                );
-              },
-              child: const Text(
-                'Pengisian KRS',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ================= USER BUBBLE =================
   Widget _userBubble(String text) {
     return Align(
@@ -189,53 +236,6 @@ class ChatDetailPageState extends State<ChatDetailPage> {
             child: Icon(Icons.person, size: 16, color: Colors.white),
           ),
         ],
-      ),
-    );
-  }
-
-  // ================= BOT MENU =================
-  Widget _botMenu() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFEAF1FF),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _menuItem(
-              title: 'Prosedur KRS',
-              onTap: () {
-                print('Klik Prosedur KRS');
-              },
-            ),
-            _menuItem(
-              title: 'Persyaratan KRS',
-              onTap: () {
-                print('Klik Persyaratan KRS');
-              },
-            ),
-            _menuItem(
-              title: 'Transaksi KRS',
-              onTap: () {
-                setState(() {
-                  chatWidgets.add(_userBubble("Transaksi KRS"));
-                  chatWidgets.add(const SizedBox(height: 12));
-                  chatWidgets.add(_botBubbleTransaksiKrs(context));
-                });
-              },
-            ),
-            _menuItem(
-              title: 'Hasil KRS',
-              onTap: () {
-                print('Klik Hasil KRS');
-              },
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -263,7 +263,6 @@ class ChatDetailPageState extends State<ChatDetailPage> {
     );
   }
 
-  // ================= INPUT BAR =================
   Widget _inputBar() {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
@@ -282,8 +281,9 @@ class ChatDetailPageState extends State<ChatDetailPage> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: const TextField(
-                decoration: InputDecoration(
+              child: TextField(
+                controller: _controller,
+                decoration: const InputDecoration(
                   hintText: 'Message',
                   border: InputBorder.none,
                 ),
@@ -295,7 +295,13 @@ class ChatDetailPageState extends State<ChatDetailPage> {
 
           IconButton(
             icon: const Icon(Icons.send, color: Colors.white),
-            onPressed: () {},
+            onPressed: () {
+              final text = _controller.text.trim();
+              if (text.isNotEmpty) {
+                _controller.clear();
+                sendMessage(text);
+              }
+            },
           ),
 
           IconButton(

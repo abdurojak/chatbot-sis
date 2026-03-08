@@ -1,6 +1,10 @@
+import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:chatbot/chat_screen.dart';
+import 'package:chatbot/component/authentication.dart';
+import 'package:chatbot/guardianship.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -48,45 +52,73 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ================= HEADER =================
   Widget _header() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E73BE),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: const [
-              CircleAvatar(radius: 22),
-              SizedBox(width: 12),
-              Text(
-                "Hello, Sophia!",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+    return FutureBuilder(
+      future: _loadHeaderData(),
+      builder: (context, snapshot) {
+        final data = snapshot.data;
+
+        Uint8List? photoBytes;
+        String name = 'Mahasiswa';
+
+        if (data != null) {
+          final base64Photo = data['photo'];
+          final nim = data['nim'];
+
+          if (base64Photo != null && base64Photo.isNotEmpty) {
+            final pureBase64 = base64Photo
+                .split(',')
+                .last; // buang "data:image/jpg;base64,"
+            photoBytes = base64Decode(pureBase64);
+          }
+
+          name = nim ?? 'Mahasiswa';
+        }
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E73BE),
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Colors.white,
+                    backgroundImage: photoBytes != null
+                        ? MemoryImage(photoBytes)
+                        : null,
+                    child: photoBytes == null
+                        ? const Icon(Icons.person, color: Colors.grey)
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    "Hello, $name!",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          // const SizedBox(height: 16),
-          // TextField(
-          //   decoration: InputDecoration(
-          //     hintText: 'Search',
-          //     prefixIcon: const Icon(Icons.search),
-          //     filled: true,
-          //     fillColor: Colors.white,
-          //     border: OutlineInputBorder(
-          //       borderRadius: BorderRadius.circular(14),
-          //       borderSide: BorderSide.none,
-          //     ),
-          //   ),
-          // ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  // ================= AMBIL DATA FOTO =================
+  Future<Map<String, String?>> _loadHeaderData() async {
+    final photo = await AuthStorage.getPhotoBase64();
+    final nim = await AuthStorage.getNim();
+
+    return {'photo': photo, 'nim': nim};
   }
 
   // ================= BOTTOM BAR =================
@@ -246,6 +278,7 @@ class ChatPage extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const ChatDetailPage()),
+          // MaterialPageRoute(builder: (_) => const PerwalianPage()),
         );
       },
       child: Container(

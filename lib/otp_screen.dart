@@ -1,8 +1,81 @@
-import 'package:chatbot/fill_krs.dart';
+import 'dart:convert';
+import 'package:chatbot/chat_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
-class OtpVerificationScreen extends StatelessWidget {
-  const OtpVerificationScreen({super.key});
+class OtpVerificationScreen extends StatefulWidget {
+  final String idOtp;
+
+  const OtpVerificationScreen({super.key, required this.idOtp});
+
+  @override
+  State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
+}
+
+class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
+  static const int otpLength = 6;
+
+  final List<TextEditingController> _controllers = List.generate(
+    otpLength,
+    (_) => TextEditingController(),
+  );
+
+  final List<FocusNode> _focusNodes = List.generate(
+    otpLength,
+    (_) => FocusNode(),
+  );
+
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    for (final f in _focusNodes) {
+      f.dispose();
+    }
+    super.dispose();
+  }
+
+  String get _otpCode => _controllers.map((c) => c.text.trim()).join();
+
+  Future<void> _verifyOtp() async {
+    if (_otpCode.length != otpLength) {
+      _showMessage('Kode OTP belum lengkap');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://sismob.trisakti.ac.id/api/otp-verification'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"id_otp": widget.idOtp, "kode_otp": _otpCode}),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ChatDetailPage()),
+        );
+      } else {
+        _showMessage(data['message'] ?? 'OTP tidak valid');
+      }
+    } catch (e) {
+      _showMessage('Terjadi error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showMessage(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,41 +95,15 @@ class OtpVerificationScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 40),
 
-              // ===== STATUS BAR MOCK =====
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text("12.00", style: TextStyle(color: Colors.white)),
-                    Icon(Icons.wifi, color: Colors.white),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // ===== LOGO =====
+              // LOGO
               Image.asset(
                 'assets/images/logo_trisakti.png',
                 width: 120,
                 color: Colors.white,
               ),
 
-              const SizedBox(height: 12),
-
-              const Text(
-                "UNIVERSITAS TRISAKTI",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
-
               const SizedBox(height: 40),
 
-              // ===== OTP CARD =====
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Container(
@@ -82,21 +129,20 @@ class OtpVerificationScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        "We have sent the verification\ncode to your email address",
+                        "Masukkan kode OTP yang dikirim ke email kamu",
                         style: TextStyle(color: Colors.white),
                       ),
 
                       const SizedBox(height: 24),
 
-                      // ===== OTP INPUT =====
+                      // OTP INPUT
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(4, (index) => _otpBox()),
+                        children: List.generate(otpLength, (i) => _otpBox(i)),
                       ),
 
                       const SizedBox(height: 32),
 
-                      // ===== CONFIRM BUTTON =====
                       SizedBox(
                         width: double.infinity,
                         height: 48,
@@ -108,18 +154,15 @@ class OtpVerificationScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const PengisianKrsPage(),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            "Confirm",
-                            style: TextStyle(fontSize: 16),
-                          ),
+                          onPressed: _isLoading ? null : _verifyOtp,
+                          child: _isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  "Confirm",
+                                  style: TextStyle(fontSize: 16),
+                                ),
                         ),
                       ),
                     ],
@@ -133,15 +176,24 @@ class OtpVerificationScreen extends StatelessWidget {
     );
   }
 
-  // ===== OTP BOX =====
-  Widget _otpBox() {
+  Widget _otpBox(int index) {
     return SizedBox(
-      width: 55,
+      width: 45,
       height: 55,
       child: TextField(
+        controller: _controllers[index],
+        focusNode: _focusNodes[index],
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
         maxLength: 1,
+        onChanged: (val) {
+          if (val.isNotEmpty && index < otpLength - 1) {
+            FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
+          }
+          if (val.isEmpty && index > 0) {
+            FocusScope.of(context).requestFocus(_focusNodes[index - 1]);
+          }
+        },
         decoration: InputDecoration(
           counterText: '',
           filled: true,
