@@ -226,24 +226,42 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
 
   /// ================= INFO ROW =================
 
-  Widget _infoRow(String label, String value) {
+  Widget _infoRow(String title, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Expanded(flex: 2, child: Text(label)),
-          const Text(": "),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+          Expanded(child: Text(title)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(10),
             ),
+            child: Text(value),
           ),
         ],
       ),
     );
   }
+  // Widget _infoRow(String label, String value) {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(vertical: 4),
+  //     child: Row(
+  //       children: [
+  //         Expanded(flex: 2, child: Text(label)),
+  //         const Text(": "),
+  //         Expanded(
+  //           flex: 3,
+  //           child: Text(
+  //             value,
+  //             style: const TextStyle(fontWeight: FontWeight.bold),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   /// ================= UI =================
 
@@ -270,9 +288,34 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                /// ===== INFO BOX =====
-                Padding(
-                  padding: const EdgeInsets.all(16),
+                // /// ===== INFO BOX =====
+                // Padding(
+                //   padding: const EdgeInsets.all(16),
+                //   child: Column(
+                //     children: [
+                //       _infoRow(
+                //         "Semester to Register",
+                //         _semesters.isNotEmpty
+                //             ? _semesters.first["SemesterMainName"]
+                //             : "-",
+                //       ),
+                //       _infoRow("Semester Level", semesterLevel.toString()),
+                //       _infoRow("Total Credit", "$totalSks/$maxSks"),
+                //     ],
+                //   ),
+                // ),
+
+                /// ======= INFO CARD =======
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black26, blurRadius: 8),
+                    ],
+                  ),
                   child: Column(
                     children: [
                       _infoRow(

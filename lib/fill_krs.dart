@@ -27,6 +27,9 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
   String? _selectedSemesterId;
   String? _expandedSubjectId;
 
+  int maxSks = 0;
+  int totalSks = 0;
+
   final Map<String, List<Map<String, dynamic>>> _subjectClassesCache = {};
   final Map<String, String> _selectedClassPerSubject = {};
 
@@ -41,6 +44,8 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
     if (_selectedSemesterId != null) {
       await _fetchSubjects();
     }
+    await _fetchRequirement();
+    await _fetchKrs();
   }
 
   // ================= FETCH SEMESTER =================
@@ -81,6 +86,97 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
       setState(() {
         _error = e.toString();
       });
+    }
+  }
+
+  /// ================= GET REQUIREMENT (TEMPORARY HARDCODED) =================
+
+  Future<void> _fetchRequirement() async {
+    // Karena API 404, kita gunakan data dummy sesuai spesifikasi Anda
+    final Map<String, dynamic> mockResponse = {
+      "status": "Successful",
+      "header": {"Content-Type": "application/json"},
+      "body": {
+        "IdSemesterMain": "773",
+        "maks_sks": "24",
+        "requirements": [
+          {
+            "req_id": "req1",
+            "description": "Status Mahasiswa Aktif.",
+            "status": 1,
+            "button": [],
+          },
+          {
+            "req_id": "req2",
+            "description": "Tidak ada kewajiban keuangan.",
+            "status": 1,
+            "button": [],
+          },
+          {
+            "req_id": "req3",
+            "description": "Belum Perwalian",
+            "status": 0,
+            "button": [],
+          },
+          {
+            "req_id": "req4",
+            "description": "Persetujuan Perwalian",
+            "status": 0,
+            "button": [],
+          },
+        ],
+      },
+    };
+
+    // Simulasi delay jaringan agar CircularProgressIndicator tetap terlihat sebentar
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    setState(() {
+      maxSks = mockResponse["body"]["maks_sks"];
+      // Anda bisa menyimpan data requirements ke variabel state lain jika ingin menampilkannya di UI
+    });
+  }
+
+  /// ================= FETCH KRS =================
+
+  Future<void> _fetchKrs() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final token = await AuthStorage.getToken();
+      final idLogin = await AuthStorage.getIdLogin();
+
+      final res = await http.post(
+        Uri.parse('https://sismob.trisakti.ac.id/api/get-krs'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "IdLogin": idLogin,
+          "token": token,
+          "IdSemester": widget.idSemester,
+        }),
+      );
+
+      final json = jsonDecode(res.body);
+
+      if (res.statusCode == 200) {
+        final List list = json['body']?['kelas'] ?? [];
+
+        int sks = 0;
+
+        for (var item in list) {
+          sks += int.tryParse(item['sks'].toString()) ?? 0;
+        }
+
+        if (!mounted) return;
+
+        setState(() {
+          totalSks = sks;
+        });
+      }
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -223,6 +319,10 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
             backgroundColor: Colors.green,
           ),
         );
+        _fetchKrs(); // Refresh total SKS setelah berhasil register
+        _fetchRequirement(); // Refresh requirement untuk update status jika ada
+        _fetchSemesters(); // Refresh semester untuk update status jika ada
+        _fetchSubjects(); // Refresh subjects untuk update status jika ada
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -243,6 +343,7 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final semesterLevel = _semesters.length;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pengisian KRS'),
@@ -256,17 +357,42 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
           : Column(
               children: [
                 /// ================= DROPDOWN SEMESTER =================
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: DropdownButtonFormField<String>(
-                    value: _selectedSemesterId,
-                    items: _semesters.map((sem) {
-                      return DropdownMenuItem<String>(
-                        value: sem['IdSemesterMaster']?.toString(),
-                        child: Text(sem['SemesterMainName'] ?? ''),
-                      );
-                    }).toList(),
-                    onChanged: _onSemesterChanged,
+                // Padding(
+                //   padding: const EdgeInsets.all(16),
+                //   child: DropdownButtonFormField<String>(
+                //     value: _selectedSemesterId,
+                //     items: _semesters.map((sem) {
+                //       return DropdownMenuItem<String>(
+                //         value: sem['IdSemesterMaster']?.toString(),
+                //         child: Text(sem['SemesterMainName'] ?? ''),
+                //       );
+                //     }).toList(),
+                //     onChanged: _onSemesterChanged,
+                //   ),
+                // ),
+
+                /// ======= INFO CARD =======
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black26, blurRadius: 8),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      _infoRow(
+                        "Semester to Register",
+                        _semesters.isNotEmpty
+                            ? _semesters.first["SemesterMainName"]
+                            : "-",
+                      ),
+                      _infoRow("Semester Level", semesterLevel.toString()),
+                      _infoRow("Total Credit", "$totalSks/$maxSks"),
+                    ],
                   ),
                 ),
 
@@ -511,6 +637,27 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                 ),
               ],
             ),
+    );
+  }
+
+  /// ================= WIDGET =================
+
+  Widget _infoRow(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(child: Text(title)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(value),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:chatbot/component/authentication.dart';
 import 'package:chatbot/component/krs_requirement_buble.dart';
 import 'package:chatbot/fill_krs.dart';
+import 'package:chatbot/get_invoice.dart';
 import 'package:chatbot/login_screen.dart';
 import 'package:chatbot/result_khs.dart';
 import 'package:chatbot/result_krs.dart';
@@ -96,6 +97,13 @@ class BotActionHandle {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const HasilKhsPage()),
+        );
+        return true;
+
+      case 'Transaksi Pembayaran':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const InvoicePage()),
         );
         return true;
 
