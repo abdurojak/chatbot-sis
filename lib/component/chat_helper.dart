@@ -4,11 +4,13 @@ import 'package:chatbot/component/authentication.dart';
 import 'package:chatbot/component/krs_requirement_buble.dart';
 import 'package:chatbot/fill_krs.dart';
 import 'package:chatbot/get_invoice.dart';
+import 'package:chatbot/kpu_screen.dart';
 import 'package:chatbot/login_screen.dart';
 import 'package:chatbot/result_khs.dart';
 import 'package:chatbot/result_krs.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class BotActionHandle {
   static Future<bool> handle(
@@ -100,11 +102,64 @@ class BotActionHandle {
         );
         return true;
 
+      case 'Hasil Kartu Peserta Ujian':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ExamSlipPage()),
+        );
+        return true;
+
       case 'Transaksi Pembayaran':
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const InvoicePage()),
         );
+        return true;
+
+      case 'Hasil Nilai':
+        if (token == null || idLogin == null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
+          return true;
+        }
+
+        debugPrint(
+          "Mengambil data transkrip dengan IdLogin: $idLogin dan token: $token",
+        );
+
+        try {
+          final res = await http.post(
+            Uri.parse('https://sismob.trisakti.ac.id/api/get-transkrip'),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({"IdLogin": idLogin, "token": token}),
+          );
+
+          final json = jsonDecode(res.body);
+
+          final fileUrl = json['body']?['data']?['file_path'];
+
+          if (fileUrl != null && fileUrl.toString().isNotEmpty) {
+            addBotWidgets([_botBubble("📄 Membuka hasil nilai kamu...")]);
+
+            final uri = Uri.parse(fileUrl);
+
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(
+                uri,
+                mode: LaunchMode.externalApplication, // buka browser/pdf viewer
+              );
+            } else {
+              addBotWidgets([_botBubble("Gagal membuka file PDF 😢")]);
+            }
+          } else {
+            addBotWidgets([_botBubble("File transkrip tidak ditemukan ❌")]);
+          }
+        } catch (e) {
+          addBotWidgets([_botBubble("Gagal mengambil data transkrip 😢")]);
+        }
+
         return true;
 
       default:
