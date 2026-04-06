@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:chatbot/component/app_theme.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -15,13 +16,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0A66C2), Colors.white],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppThemePalette.screenGradient()),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -59,7 +54,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2F477A),
+                          backgroundColor: AppThemePalette.dark(0.35),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),

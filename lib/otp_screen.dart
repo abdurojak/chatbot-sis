@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:chatbot/chat_screen.dart';
+import 'package:chatbot/component/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -83,13 +84,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0066CC), Color(0xFFEAF4FF)],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppThemePalette.screenGradient()),
         child: SafeArea(
           child: Column(
             children: [
@@ -110,21 +105,24 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xFF4F8FD8), Color(0xFFD6E9FF)],
+                      colors: [
+                        AppThemePalette.soft(0.35),
+                        AppThemePalette.soft(0.78),
+                      ],
                     ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "OTP Verification",
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F3C88),
+                          color: AppThemePalette.dark(0.45),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -148,7 +146,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         height: 48,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2F477A),
+                            backgroundColor: AppThemePalette.dark(0.35),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),

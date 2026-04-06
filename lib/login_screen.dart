@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:chatbot/component/authentication.dart';
+import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/otp_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -54,6 +55,9 @@ class _LoginScreenState extends State<LoginScreen> {
           photoBase64: data['photo'], // ⚠️ base64 besar, lihat catatan di bawah
           active: data['Active'], // pakai userid sebagai IdLogin sesuai API KRS
         );
+        AppThemeController.instance.updatePrimaryColor(
+          data['color']?.toString(),
+        );
 
         debugPrint('TOKEN: $token');
         debugPrint('USERID: $userId');
@@ -84,13 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0A66C2), Colors.white],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppThemePalette.screenGradient()),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -145,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 48,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2F477A),
+                      backgroundColor: AppThemePalette.dark(0.35),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),

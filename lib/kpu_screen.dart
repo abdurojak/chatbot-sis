@@ -1,4 +1,5 @@
 import 'package:chatbot/component/authentication.dart';
+import 'package:chatbot/component/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -18,7 +19,7 @@ class ExamSlipPage extends StatefulWidget {
 class _ExamSlipPageState extends State<ExamSlipPage> {
   List<dynamic> examData = [];
   bool isLoading = true;
-  final Color primaryBlue = const Color(0xFF1E73BE);
+  Color get primaryBlue => AppThemePalette.primary;
 
   @override
   void initState() {

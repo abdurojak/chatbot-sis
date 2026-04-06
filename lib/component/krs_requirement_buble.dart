@@ -1,4 +1,5 @@
 import 'package:chatbot/guardianship.dart';
+import 'package:chatbot/component/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:chatbot/component/chat_helper.dart';
 
@@ -9,7 +10,6 @@ class KrsRequirementBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = items.length;
     final passed = items.where((e) => e.status == 1).length;
 
     return Align(
@@ -17,7 +17,7 @@ class KrsRequirementBubble extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFEAF1FF),
+          color: AppThemePalette.soft(0.88),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -25,17 +25,17 @@ class KrsRequirementBubble extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.assignment_turned_in,
                   size: 18,
-                  color: Color(0xFF1E73BE),
+                  color: AppThemePalette.primary,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   'Status Persyaratan KRS ($passed/${items.length})',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E73BE),
+                    color: AppThemePalette.primary,
                   ),
                 ),
               ],
@@ -75,7 +75,7 @@ class KrsRequirementBubble extends StatelessWidget {
                     if (!done && isPerwalian)
                       TextButton(
                         style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF1E73BE),
+                          foregroundColor: AppThemePalette.primary,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,
@@ -100,7 +100,7 @@ class KrsRequirementBubble extends StatelessWidget {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

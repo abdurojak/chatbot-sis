@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:chatbot/component/authentication.dart';
+import 'package:chatbot/component/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Untuk fitur salin VA
 import 'package:http/http.dart' as http;
@@ -13,7 +14,7 @@ class InvoicePage extends StatefulWidget {
 }
 
 class _InvoicePageState extends State<InvoicePage> {
-  static const Color primaryBlue = Color(0xFF1E73BE);
+  Color get primaryBlue => AppThemePalette.primary;
   bool isLoading = true;
   List invoiceList = [];
   // --- TAMBAHKAN INI ---
@@ -115,7 +116,7 @@ class _InvoicePageState extends State<InvoicePage> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(15),
           ),
-          child: const CircularProgressIndicator(
+          child: CircularProgressIndicator(
             color:
                 primaryBlue, // Ganti ke primaryRed jika kamu masih pakai variabel merah
           ),
@@ -232,7 +233,7 @@ class _InvoicePageState extends State<InvoicePage> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: primaryBlue.withOpacity(0.5)),
+        border: Border.all(color: primaryBlue.withAlpha(128)),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
       ),
@@ -245,7 +246,7 @@ class _InvoicePageState extends State<InvoicePage> {
                 flex: 4,
                 child: Text(
                   singleInvoice!['Description'] ?? "-",
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: primaryBlue,
                     fontWeight: FontWeight.bold,
                   ),
@@ -495,7 +496,7 @@ class _InvoicePageState extends State<InvoicePage> {
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: primaryBlue,
                 fontSize: 16,
@@ -670,7 +671,7 @@ class _InvoicePageState extends State<InvoicePage> {
                         ),
                         Text(
                           formatRupiah(totalAmount),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
                             color: primaryBlue,
@@ -701,12 +702,12 @@ class _InvoicePageState extends State<InvoicePage> {
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50),
-                        side: const BorderSide(color: primaryBlue),
+                        side: BorderSide(color: primaryBlue),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         "Kembali",
                         style: TextStyle(color: primaryBlue),
                       ),
@@ -754,7 +755,7 @@ class _InvoicePageState extends State<InvoicePage> {
           ),
         ),
         body: isLoading
-            ? const Center(child: CircularProgressIndicator(color: primaryBlue))
+            ? Center(child: CircularProgressIndicator(color: primaryBlue))
             : TabBarView(
                 children: [
                   // TAB 1: TAGIHAN AKTIF (Kode yang sudah kita buat sebelumnya)
@@ -787,10 +788,10 @@ class _InvoicePageState extends State<InvoicePage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: primaryBlue.withOpacity(0.5)),
+            border: Border.all(color: primaryBlue.withAlpha(128)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withAlpha(13),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -1012,8 +1013,8 @@ class _InvoicePageState extends State<InvoicePage> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: isPaid
-            ? Colors.green.withOpacity(0.1)
-            : Colors.orange.withOpacity(0.1),
+            ? Colors.green.withAlpha(26)
+            : Colors.orange.withAlpha(26),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -1033,7 +1034,7 @@ class _InvoicePageState extends State<InvoicePage> {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: RichText(
         text: TextSpan(
-          style: const TextStyle(fontSize: 11, color: primaryBlue),
+          style: TextStyle(fontSize: 11, color: primaryBlue),
           children: [
             TextSpan(
               text: "$label : ",
@@ -1058,21 +1059,17 @@ class _InvoicePageState extends State<InvoicePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5),
+          BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 5),
         ],
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.check_box_outline_blank,
-            color: primaryBlue,
-            size: 18,
-          ),
+          Icon(Icons.check_box_outline_blank, color: primaryBlue, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               item['Description'],
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: primaryBlue,
@@ -1087,7 +1084,7 @@ class _InvoicePageState extends State<InvoicePage> {
           ),
           Text(
             "Total Tagihan : ${formatRupiah(item['bill_amount'])}",
-            style: const TextStyle(fontSize: 11, color: primaryBlue),
+            style: TextStyle(fontSize: 11, color: primaryBlue),
           ),
         ],
       ),
@@ -1121,14 +1118,10 @@ class _InvoicePageState extends State<InvoicePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: isAvailable
-            ? primaryBlue.withOpacity(0.1)
-            : Colors.grey.shade100,
+        color: isAvailable ? primaryBlue.withAlpha(26) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isAvailable
-              ? primaryBlue.withOpacity(0.3)
-              : Colors.grey.shade300,
+          color: isAvailable ? primaryBlue.withAlpha(77) : Colors.grey.shade300,
         ),
       ),
       child: Row(
@@ -1155,7 +1148,7 @@ class _InvoicePageState extends State<InvoicePage> {
                   ),
                 );
               },
-              child: const Icon(Icons.copy, size: 18, color: primaryBlue),
+              child: Icon(Icons.copy, size: 18, color: primaryBlue),
             ),
         ],
       ),
@@ -1166,7 +1159,7 @@ class _InvoicePageState extends State<InvoicePage> {
     return Container(
       width: double.infinity,
       height: 140,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: primaryBlue,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(40),
@@ -1203,10 +1196,10 @@ class _InvoicePageState extends State<InvoicePage> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border.all(color: primaryBlue.withOpacity(0.3)),
+          border: Border.all(color: primaryBlue.withAlpha(77)),
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5),
+            BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 5),
           ],
         ),
         child: Row(
@@ -1227,7 +1220,7 @@ class _InvoicePageState extends State<InvoicePage> {
             Expanded(
               child: Text(
                 item['Description'],
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                   color: primaryBlue,
@@ -1236,7 +1229,7 @@ class _InvoicePageState extends State<InvoicePage> {
             ),
             Text(
               formatRupiah(item['bill_amount']),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
                 color: primaryBlue,
                 fontWeight: FontWeight.bold,
@@ -1261,7 +1254,7 @@ class _InvoicePageState extends State<InvoicePage> {
             flex: 4,
             child: Text(
               item['Description'] ?? "Paket Camaba",
-              style: const TextStyle(
+              style: TextStyle(
                 color: primaryBlue,
                 fontWeight: FontWeight.bold,
                 fontSize: 14,

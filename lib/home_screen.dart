@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:chatbot/chat_screen.dart';
 import 'package:chatbot/component/authentication.dart';
-import 'package:chatbot/guardianship.dart';
+import 'package:chatbot/component/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -76,8 +76,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
         return Container(
           padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1E73BE),
+          decoration: BoxDecoration(
+            color: AppThemePalette.primary,
             borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
           ),
           child: Column(
@@ -132,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           height: 70,
           padding: const EdgeInsets.symmetric(horizontal: 48),
-          color: const Color(0xFF1E73BE),
+          color: AppThemePalette.primary,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -156,10 +156,10 @@ class _HomeScreenState extends State<HomeScreen> {
         height: 64,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Color(0xFF1E73BE),
+          color: AppThemePalette.primary,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withAlpha(51),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -171,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Icons.chat,
             color: selectedIndex == 1
                 ? const Color.fromARGB(255, 255, 255, 255)
-                : const Color.fromARGB(255, 156, 198, 237),
+                : AppThemePalette.soft(0.45),
           ),
           onPressed: () {
             setState(() => selectedIndex = 1);
@@ -188,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return IconButton(
       icon: Icon(
         icon,
-        color: isActive ? Colors.white : Colors.white.withOpacity(0.6),
+        color: isActive ? Colors.white : Colors.white.withAlpha(153),
       ),
       onPressed: () {
         setState(() => selectedIndex = index);
@@ -241,7 +241,7 @@ class NotificationPage extends StatelessWidget {
 class ChatPage extends StatelessWidget {
   const ChatPage({super.key});
 
-  static const Color primaryBlue = Color(0xFF1E73BE);
+  static Color get primaryBlue => AppThemePalette.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -285,13 +285,11 @@ class ChatPage extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1E73BE), Color(0xFFBFD7ED)],
-          ),
+          gradient: AppThemePalette.cardGradient(),
         ),
         child: Row(
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 24,
               backgroundColor: Colors.white,
               child: Icon(Icons.account_balance, color: primaryBlue),
@@ -328,8 +326,8 @@ class ChatPage extends StatelessWidget {
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF2F5EB5),
+                  decoration: BoxDecoration(
+                    color: AppThemePalette.dark(0.18),
                     shape: BoxShape.circle,
                   ),
                   child: const Text(

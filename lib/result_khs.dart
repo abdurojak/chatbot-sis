@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:chatbot/component/authentication.dart';
+import 'package:chatbot/component/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -11,7 +12,7 @@ class HasilKhsPage extends StatefulWidget {
 }
 
 class _HasilKhsPageState extends State<HasilKhsPage> {
-  static const Color primaryBlue = Color(0xFF1E73BE);
+  Color get primaryBlue => AppThemePalette.primary;
 
   bool isLoading = true;
   List khsDetailList = [];
@@ -149,7 +150,7 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
   Widget _buildSemesterPicker() {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: primaryBlue.withOpacity(0.05),
+      color: primaryBlue.withAlpha(13),
       child: DropdownButtonFormField<String>(
         value: _selectedSemesterId,
         decoration: const InputDecoration(
@@ -197,9 +198,9 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
   Widget _cardKinerja(String title, String value, Color color) {
     return Container(
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withAlpha(26),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withAlpha(77)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -245,7 +246,7 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
             children: [
               Text(
                 item['nilai'] ?? "-",
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: primaryBlue,

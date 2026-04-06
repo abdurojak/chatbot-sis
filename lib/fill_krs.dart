@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:chatbot/component/authentication.dart';
+import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/component/subject_model.dart';
 import 'package:chatbot/schedule_krs.dart';
 import 'package:chatbot/submit_krs.dart';
@@ -11,7 +12,7 @@ class PengisianKrsPage extends StatefulWidget {
 
   const PengisianKrsPage({super.key, required this.idSemester});
 
-  static const Color primaryBlue = Color(0xFF1E73BE);
+  static Color get primaryBlue => AppThemePalette.primary;
 
   @override
   State<PengisianKrsPage> createState() => _PengisianKrsPageState();

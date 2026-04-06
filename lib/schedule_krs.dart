@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:chatbot/component/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:chatbot/component/authentication.dart';
@@ -13,7 +14,7 @@ class JadwalKrsScreen extends StatefulWidget {
 }
 
 class _JadwalKrsScreenState extends State<JadwalKrsScreen> {
-  static const Color primaryBlue = Color(0xFF4A6FAE);
+  Color get primaryBlue => AppThemePalette.primary;
 
   bool _loading = true;
 

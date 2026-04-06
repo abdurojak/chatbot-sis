@@ -1,4 +1,5 @@
 import 'package:chatbot/component/chat_helper.dart';
+import 'package:chatbot/component/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -11,7 +12,7 @@ class ChatDetailPage extends StatefulWidget {
 }
 
 class ChatDetailPageState extends State<ChatDetailPage> {
-  static const Color primaryBlue = Color(0xFF1E73BE);
+  Color get primaryBlue => AppThemePalette.primary;
 
   late List<Widget> chatWidgets;
 
@@ -100,7 +101,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFEAF1FF),
+          color: AppThemePalette.soft(0.88),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -158,7 +159,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
   Widget _header(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 40, 16, 20),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: primaryBlue,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
@@ -169,7 +170,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
             onPressed: () => Navigator.pop(context),
           ),
 
-          const CircleAvatar(
+          CircleAvatar(
             radius: 22,
             backgroundColor: Colors.white,
             child: Icon(Icons.account_balance, color: primaryBlue),
@@ -206,7 +207,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFEAF3FF),
+          color: AppThemePalette.soft(0.9),
           borderRadius: BorderRadius.circular(18),
         ),
         child: Text(text, style: const TextStyle(fontSize: 14)),
@@ -250,13 +251,10 @@ class ChatDetailPageState extends State<ChatDetailPage> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                color: Color(0xFF1E73BE),
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
-            Container(height: 1, color: Color(0xFF1E73BE)),
+            Container(height: 1, color: primaryBlue),
           ],
         ),
       ),

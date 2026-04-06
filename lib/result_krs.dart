@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:chatbot/component/authentication.dart';
+import 'package:chatbot/component/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -11,7 +12,7 @@ class HasilKrsPage extends StatefulWidget {
 }
 
 class _HasilKrsPageState extends State<HasilKrsPage> {
-  static const Color primaryBlue = Color(0xFF1E73BE);
+  Color get primaryBlue => AppThemePalette.primary;
 
   bool isLoading = true;
   List kelasList = [];

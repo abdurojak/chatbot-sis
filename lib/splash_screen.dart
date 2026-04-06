@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/home_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -35,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen> {
             child: Container(
               width: double.infinity,
               height: double.infinity,
-              color: const Color(0xFF0A66C2), // BIRU TUA TRISAKTI
+              color: AppThemePalette.primary,
             ),
           ),
 
