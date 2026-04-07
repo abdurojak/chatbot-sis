@@ -14,7 +14,8 @@ class ChatDetailPage extends StatefulWidget {
 class ChatDetailPageState extends State<ChatDetailPage> {
   Color get primaryBlue => AppThemePalette.primary;
 
-  late List<Widget> chatWidgets;
+  final List<Widget> chatWidgets = [];
+  bool _isBotTyping = false;
 
   final TextEditingController _controller = TextEditingController();
   final String senderId = "test_user";
@@ -25,7 +26,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
   void initState() {
     super.initState();
 
-    chatWidgets = [
+    chatWidgets.addAll([
       _botBubble(
         "Halo! Saya Academic Assistant, asisten akademik digital "
         "yang siap menemani anda.\n\n"
@@ -35,8 +36,6 @@ class ChatDetailPageState extends State<ChatDetailPage> {
         "Tinggal bilang kebutuhanmu, saya bantu ya",
       ),
 
-      const SizedBox(height: 12),
-
       // _userBubble("Kartu Rencana Studi"),
 
       // const SizedBox(height: 12),
@@ -44,54 +43,101 @@ class ChatDetailPageState extends State<ChatDetailPage> {
       // _botMenu(),
 
       // const SizedBox(height: 12),
-    ];
+    ]);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void addBotWidgets(List<Widget> widgets) {
+    _appendWidgets(widgets);
+  }
+
+  void _appendWidgets(List<Widget> widgets) {
+    if (!mounted) return;
+
     setState(() {
-      chatWidgets.addAll(widgets);
-      chatWidgets.add(const SizedBox(height: 12));
+      chatWidgets.addAll(widgets.where((widget) => widget is! SizedBox));
+    });
+
+    _scrollToBottom();
+  }
+
+  void _setBotTyping(bool value) {
+    if (!mounted || _isBotTyping == value) return;
+
+    setState(() {
+      _isBotTyping = value;
+    });
+
+    _scrollToBottom();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || !_scrollController.hasClients) return;
+
+      final position = _scrollController.position.maxScrollExtent;
+      await _scrollController.animateTo(
+        position,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      if (!mounted || !_scrollController.hasClients) return;
+
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     });
   }
 
   Future<void> sendMessage(String message) async {
-    setState(() {
-      chatWidgets.add(_userBubble(message));
-      chatWidgets.add(const SizedBox(height: 12));
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    });
+    _appendWidgets([_userBubble(message)]);
+    _setBotTyping(true);
 
     final url = Uri.parse("http://103.28.161.71:5005/webhooks/rest/webhook");
-    // final url = Uri.parse("https://chatbot-sis.free.beeceptor.com");
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"sender": senderId, "message": message}),
-    );
+    try {
+      // final url = Uri.parse("https://chatbot-sis.free.beeceptor.com");
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"sender": senderId, "message": message}),
+      );
 
-    final data = jsonDecode(response.body) as List;
+      final data = jsonDecode(response.body) as List;
+      final nextWidgets = <Widget>[];
 
-    for (var item in data) {
-      if (item["text"] != null) {
-        setState(() {
-          chatWidgets.add(_botBubble(item["text"]));
-          chatWidgets.add(const SizedBox(height: 12));
-        });
+      for (final item in data) {
+        if (item["text"] != null) {
+          nextWidgets.add(_botBubble(item["text"]));
+        }
+
+        if (item["buttons"] != null) {
+          nextWidgets.add(_botMenuFromApi(item["buttons"]));
+        }
       }
 
-      if (item["buttons"] != null) {
-        setState(() {
-          chatWidgets.add(_botMenuFromApi(item["buttons"]));
-          chatWidgets.add(const SizedBox(height: 12));
-        });
+      _setBotTyping(false);
+
+      if (nextWidgets.isEmpty) {
+        _appendWidgets([
+          _botBubble("Belum ada respons dari server. Coba beberapa saat lagi."),
+        ]);
+        return;
       }
+
+      _appendWidgets(nextWidgets);
+    } catch (_) {
+      _setBotTyping(false);
+      _appendWidgets([
+        _botBubble(
+          "Terjadi kendala saat mengambil balasan. Silakan coba lagi.",
+        ),
+      ]);
     }
   }
 
@@ -144,7 +190,8 @@ class ChatDetailPageState extends State<ChatDetailPage> {
             child: ListView(
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
-              children: chatWidgets,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              children: _buildChatChildren(),
             ),
           ),
 
@@ -293,11 +340,12 @@ class ChatDetailPageState extends State<ChatDetailPage> {
 
           IconButton(
             icon: const Icon(Icons.send, color: Colors.white),
-            onPressed: () {
+            onPressed: () async {
               final text = _controller.text.trim();
               if (text.isNotEmpty) {
+                FocusScope.of(context).unfocus();
                 _controller.clear();
-                sendMessage(text);
+                await sendMessage(text);
               }
             },
           ),
@@ -307,6 +355,101 @@ class ChatDetailPageState extends State<ChatDetailPage> {
             onPressed: () {},
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _botTypingBubble() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppThemePalette.soft(0.9),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            _TypingDot(delay: 0),
+            SizedBox(width: 6),
+            _TypingDot(delay: 120),
+            SizedBox(width: 6),
+            _TypingDot(delay: 240),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildChatChildren() {
+    final items = <Widget>[...chatWidgets];
+    if (_isBotTyping) {
+      items.add(_botTypingBubble());
+    }
+
+    final children = <Widget>[];
+    for (var i = 0; i < items.length; i++) {
+      children.add(items[i]);
+      if (i < items.length - 1) {
+        children.add(const SizedBox(height: 12));
+      }
+    }
+
+    return children;
+  }
+}
+
+class _TypingDot extends StatefulWidget {
+  final int delay;
+
+  const _TypingDot({required this.delay});
+
+  @override
+  State<_TypingDot> createState() => _TypingDotState();
+}
+
+class _TypingDotState extends State<_TypingDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _animation = Tween<double>(
+      begin: 0.35,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    Future<void>.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) {
+        _controller.repeat(reverse: true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _animation,
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          color: AppThemePalette.primary,
+          shape: BoxShape.circle,
+        ),
       ),
     );
   }

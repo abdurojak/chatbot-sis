@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:chatbot/component/authentication.dart';
 import 'package:chatbot/component/app_theme.dart';
+import 'package:chatbot/models/invoice_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Untuk fitur salin VA
 import 'package:http/http.dart' as http;
@@ -19,11 +20,12 @@ class _InvoicePageState extends State<InvoicePage> {
   List invoiceList = [];
   // --- TAMBAHKAN INI ---
   bool canGenerateInvoice = false;
-  Map<String, dynamic>? openInvoiceData;
-  Map<String, dynamic>? singleInvoice;
-  List detailInvoices = [];
-  List camabaInvoices = [];
-  List paymentHistory = []; // Untuk menyimpan data dari api/get-payment-history
+  OpenInvoiceAction? openInvoiceData;
+  InvoiceRecord? singleInvoice;
+  List<InvoiceRecord> detailInvoices = [];
+  List<InvoiceRecord> camabaInvoices = [];
+  List<PaymentHistoryEntry> paymentHistory =
+      []; // Untuk menyimpan data dari api/get-payment-history
   List<int> selectedDetailIndexes =
       []; // Menyimpan index dari detailInvoices yang dicentang
   // --------------------
@@ -54,14 +56,23 @@ class _InvoicePageState extends State<InvoicePage> {
 
       if (responseInvoice.statusCode == 200 &&
           responseHistory.statusCode == 200) {
-        final dataInv = json.decode(responseInvoice.body);
-        final dataHist = json.decode(responseHistory.body);
+        final dataInv = InvoiceResponseData.fromJson(
+          json.decode(responseInvoice.body) as Map<String, dynamic>,
+        );
+        final dataHist = json.decode(responseHistory.body) as Map<String, dynamic>;
 
         setState(() {
-          singleInvoice = dataInv['body']?['data']?['single_invoice'];
-          detailInvoices = dataInv['body']?['data']?['detail'] ?? [];
-          camabaInvoices = dataInv['body']?['data']?['invoice_camaba'] ?? [];
-          paymentHistory = dataHist['body']?['data'] ?? [];
+          singleInvoice = dataInv.singleInvoice;
+          detailInvoices = dataInv.detailInvoices;
+          camabaInvoices = dataInv.camabaInvoices;
+          paymentHistory = ((dataHist['body']?['data'] as List?) ?? [])
+              .whereType<Map>()
+              .map(
+                (item) => PaymentHistoryEntry.fromJson(
+                  Map<String, dynamic>.from(item),
+                ),
+              )
+              .toList();
 
           // --- LOGIKA BARU DI SINI ---
           // Reset dulu agar tidak duplikat saat refresh
@@ -69,7 +80,7 @@ class _InvoicePageState extends State<InvoicePage> {
 
           for (int i = 0; i < detailInvoices.length; i++) {
             // Jika status_calculate adalah "1", masukkan ke daftar terpilih
-            if (detailInvoices[i]['status_calculate'] == "1") {
+            if (detailInvoices[i].isCalculated) {
               selectedDetailIndexes.add(i);
             }
           }
@@ -87,8 +98,7 @@ class _InvoicePageState extends State<InvoicePage> {
   double get totalSelectedDebit {
     double total = 0;
     for (int index in selectedDetailIndexes) {
-      total +=
-          double.tryParse(detailInvoices[index]['bill_amount'].toString()) ?? 0;
+      total += detailInvoices[index].billAmountValue;
     }
     return total;
   }
@@ -97,9 +107,7 @@ class _InvoicePageState extends State<InvoicePage> {
   double get totalSelectedBalance {
     double total = 0;
     for (int index in selectedDetailIndexes) {
-      total +=
-          double.tryParse(detailInvoices[index]['bill_balance'].toString()) ??
-          0;
+      total += detailInvoices[index].billBalanceValue;
     }
     return total;
   }
@@ -134,7 +142,7 @@ class _InvoicePageState extends State<InvoicePage> {
     // 1. UBAH DI SINI: Ambil 'id_invoice' sebagai pengganti 'bill_number'
     List<String> selectedInvoiceIds = selectedDetailIndexes.map((index) {
       // Pastikan key-nya adalah 'id_invoice' sesuai dengan struktur data API Anda
-      return detailInvoices[index]['id_invoice'].toString();
+      return detailInvoices[index].idInvoice;
     }).toList();
 
     // 2. Gabungkan menjadi string yang dipisahkan koma (e.g., "123,124")
@@ -203,7 +211,9 @@ class _InvoicePageState extends State<InvoicePage> {
         if (data['status'] == 200 && data['body'] != null) {
           setState(() {
             canGenerateInvoice = true;
-            openInvoiceData = data['body'];
+            openInvoiceData = OpenInvoiceAction.fromJson(
+              Map<String, dynamic>.from(data['body']),
+            );
           });
         } else {
           setState(() {
@@ -245,7 +255,9 @@ class _InvoicePageState extends State<InvoicePage> {
               Expanded(
                 flex: 4,
                 child: Text(
-                  singleInvoice!['Description'] ?? "-",
+                  singleInvoice!.description.isEmpty
+                      ? "-"
+                      : singleInvoice!.description,
                   style: TextStyle(
                     color: primaryBlue,
                     fontWeight: FontWeight.bold,
@@ -263,23 +275,24 @@ class _InvoicePageState extends State<InvoicePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _rowInfo("Invoice", singleInvoice!['bill_number']),
+                    _rowInfo("Invoice", singleInvoice!.billNumber),
                     // Tampilan yang otomatis update
                     _rowInfo("Debit Amount", displayDebit),
                     _rowInfo("Balance", displayBalance),
                     // TOMBOL HITUNG SINGLE VA
                     ElevatedButton(
                       onPressed: () {
-                        // Membuat Map dummy untuk modal agar strukturnya sama dengan invoice asli
-                        Map<String, dynamic> accumulationData = {
-                          'Description': 'Accumulated Single VA',
-                          'bill_number': singleInvoice!['bill_number'],
-                          'va': singleInvoice!['va'],
-                          'bill_amount': totalSelectedDebit,
-                        };
+                        final accumulationData = InvoicePreviewData(
+                          description: 'Accumulated Single VA',
+                          billNumber: singleInvoice!.billNumber,
+                          va: singleInvoice!.va,
+                          billAmount: totalSelectedDebit.toString(),
+                        );
 
                         _showDetailModal(
-                          hasSelection ? accumulationData : singleInvoice!,
+                          hasSelection
+                              ? accumulationData
+                              : singleInvoice!.toPreviewData(),
                           title: "Rincian Pembayaran VA",
                         );
                       },
@@ -351,9 +364,7 @@ class _InvoicePageState extends State<InvoicePage> {
   // Ubah pemanggilan di dalam build() atau ganti fungsi _checkOpenInvoice menjadi ini:
   void _handleCreateInvoice() {
     if (openInvoiceData != null) {
-      String idSem = openInvoiceData!['IdSemester'].toString();
-      String idAct = openInvoiceData!['id_activity'].toString();
-      _generateInvoice(idSem, idAct);
+      _generateInvoice(openInvoiceData!.idSemester, openInvoiceData!.idActivity);
     }
   }
 
@@ -481,7 +492,7 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   void _showDetailModal(
-    Map<String, dynamic> data, {
+    InvoicePreviewData data, {
     String title = "Rincian Tagihan",
   }) {
     showDialog(
@@ -503,8 +514,8 @@ class _InvoicePageState extends State<InvoicePage> {
               ),
             ),
             const Divider(),
-            _rowModal("Deskripsi", data['Description']),
-            _rowModal("No. Invoice", data['bill_number']),
+            _rowModal("Deskripsi", data.description),
+            _rowModal("No. Invoice", data.billNumber),
 
             const SizedBox(height: 10),
             // --- BAGIAN VA YANG DI HIGHLIGHT ---
@@ -513,10 +524,10 @@ class _InvoicePageState extends State<InvoicePage> {
               style: TextStyle(fontSize: 10, color: Colors.grey),
             ),
             const SizedBox(height: 4),
-            _buildCopyableVA(data['va']),
+            _buildCopyableVA(data.va),
 
             const SizedBox(height: 10),
-            _rowModal("Total", formatRupiah(data['bill_amount'])),
+            _rowModal("Total", formatRupiah(data.billAmount)),
             const SizedBox(height: 20),
             Center(
               child: ElevatedButton(
@@ -780,7 +791,7 @@ class _InvoicePageState extends State<InvoicePage> {
       itemCount: paymentHistory.length,
       itemBuilder: (context, index) {
         final item = paymentHistory[index];
-        List cnList = item['cn'] ?? []; // Mengambil list potongan
+        final cnList = item.discounts;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
@@ -806,7 +817,7 @@ class _InvoicePageState extends State<InvoicePage> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      item['Description'] ?? "-",
+                      item.description.isEmpty ? "-" : item.description,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -817,11 +828,8 @@ class _InvoicePageState extends State<InvoicePage> {
                 ],
               ),
               const Divider(height: 24),
-              _rowHistoryDetail("No. Tagihan", item['bill_number']),
-              _rowHistoryDetail(
-                "Total Tagihan",
-                formatRupiah(item['bill_amount']),
-              ),
+              _rowHistoryDetail("No. Tagihan", item.billNumber),
+              _rowHistoryDetail("Total Tagihan", formatRupiah(item.billAmount)),
 
               // TAMPILKAN CN (POTONGAN) JIKA ADA
               if (cnList.isNotEmpty) ...[
@@ -838,8 +846,8 @@ class _InvoicePageState extends State<InvoicePage> {
                 // Looping semua isi CN
                 ...cnList.map(
                   (cn) => _rowHistoryDetail(
-                    cn['cn_desc'] ?? "Potongan",
-                    "- ${formatRupiah(cn['amount'])}",
+                    cn.description.isEmpty ? "Potongan" : cn.description,
+                    "- ${formatRupiah(cn.amount)}",
                     color: Colors.red,
                   ),
                 ),
@@ -848,16 +856,16 @@ class _InvoicePageState extends State<InvoicePage> {
               const Divider(height: 24),
               _rowHistoryDetail(
                 "Total Dibayar",
-                formatRupiah(item['bill_paid']),
+                formatRupiah(item.billPaid),
                 isBold: true,
                 color: Colors.green,
               ),
 
-              if (item['payment'] != null && item['payment'].isNotEmpty)
+              if (item.payments.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    "Metode: ${item['payment'][0]['payment_mode']} â€¢ ${item['payment'][0]['payment_date'].toString().split(' ')[0]}",
+                    "Metode: ${item.payments.first.paymentMode} • ${item.payments.first.paymentDate.split(' ').first}",
                     style: const TextStyle(
                       fontSize: 10,
                       color: Colors.grey,
@@ -941,7 +949,7 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-  Widget _buildInvoiceCard(Map<String, dynamic> item, bool isPaid) {
+  Widget _buildInvoiceCard(InvoiceRecord item, bool isPaid) {
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 12),
@@ -959,7 +967,7 @@ class _InvoicePageState extends State<InvoicePage> {
               children: [
                 Expanded(
                   child: Text(
-                    item['Description'],
+                    item.description,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -971,18 +979,11 @@ class _InvoicePageState extends State<InvoicePage> {
             ),
             const Divider(height: 24),
             // _rowDetail("Nomor Tagihan", item['bill_number']),
-            if (item['va'] != null && item['va'].toString().isNotEmpty)
-              _rowDetail(
-                "Nomor Virtual Account",
-                item['va'] ?? "Belum tersedia",
-              ),
-            _rowDetail("Total Tagihan", formatRupiah(item['bill_amount'])),
+            if (item.va.isNotEmpty)
+              _rowDetail("Nomor Virtual Account", item.va),
+            _rowDetail("Total Tagihan", formatRupiah(item.billAmount)),
             if (!isPaid)
-              _rowDetail(
-                "Sisa Tagihan",
-                formatRupiah(item['bill_balance']),
-                isBold: true,
-              ),
+              _rowDetail("Sisa Tagihan", formatRupiah(item.billBalance), isBold: true),
           ],
         ),
       ),
@@ -1051,7 +1052,7 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   // Widget untuk item rincian dengan checkbox (BPP Pokok, SKS, dll)
-  Widget _buildSubItem(Map<String, dynamic> item) {
+  Widget _buildSubItem(InvoiceRecord item) {
     return Container(
       margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(12),
@@ -1068,7 +1069,7 @@ class _InvoicePageState extends State<InvoicePage> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              item['Description'],
+              item.description,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
@@ -1083,7 +1084,7 @@ class _InvoicePageState extends State<InvoicePage> {
             margin: const EdgeInsets.symmetric(horizontal: 8),
           ),
           Text(
-            "Total Tagihan : ${formatRupiah(item['bill_amount'])}",
+            "Total Tagihan : ${formatRupiah(item.billAmount)}",
             style: TextStyle(fontSize: 11, color: primaryBlue),
           ),
         ],
@@ -1186,11 +1187,11 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-  Widget _buildDetailItemCard(Map<String, dynamic> item, int index) {
+  Widget _buildDetailItemCard(InvoiceRecord item, int index) {
     bool isSelected = selectedDetailIndexes.contains(index);
 
     return GestureDetector(
-      onTap: () => _showDetailModal(item), // Klik teks/kartu buka modal
+      onTap: () => _showDetailModal(item.toPreviewData()), // Klik teks/kartu buka modal
       child: Container(
         margin: const EdgeInsets.only(top: 10),
         padding: const EdgeInsets.all(12),
@@ -1219,7 +1220,7 @@ class _InvoicePageState extends State<InvoicePage> {
             ),
             Expanded(
               child: Text(
-                item['Description'],
+                item.description,
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
@@ -1228,7 +1229,7 @@ class _InvoicePageState extends State<InvoicePage> {
               ),
             ),
             Text(
-              formatRupiah(item['bill_amount']),
+              formatRupiah(item.billAmount),
               style: TextStyle(
                 fontSize: 10,
                 color: primaryBlue,
@@ -1241,7 +1242,7 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-  Widget _buildCamabaCard(Map<String, dynamic> item) {
+  Widget _buildCamabaCard(InvoiceRecord item) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1253,7 +1254,7 @@ class _InvoicePageState extends State<InvoicePage> {
           Expanded(
             flex: 4,
             child: Text(
-              item['Description'] ?? "Paket Camaba",
+              item.description.isEmpty ? "Paket Camaba" : item.description,
               style: TextStyle(
                 color: primaryBlue,
                 fontWeight: FontWeight.bold,
@@ -1272,8 +1273,8 @@ class _InvoicePageState extends State<InvoicePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _rowInfo("Invoice", item['bill_number']),
-                _rowInfo("Balance", formatRupiah(item['bill_balance'])),
+                _rowInfo("Invoice", item.billNumber),
+                _rowInfo("Balance", formatRupiah(item.billBalance)),
               ],
             ),
           ),
