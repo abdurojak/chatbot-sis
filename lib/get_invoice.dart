@@ -1,10 +1,9 @@
-import 'dart:convert';
-import 'package:chatbot/component/authentication.dart';
 import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/models/invoice_models.dart';
+import 'package:chatbot/services/invoice_service.dart';
+import 'package:chatbot/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Untuk fitur salin VA
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart'; // Untuk format rupiah
 
 class InvoicePage extends StatefulWidget {
@@ -38,59 +37,39 @@ class _InvoicePageState extends State<InvoicePage> {
 
   Future<void> fetchInvoices() async {
     setState(() => isLoading = true);
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
+    final session = await SessionService.loadSession();
+    if (session == null) {
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      return;
+    }
 
     try {
-      final responseInvoice = await http.post(
-        Uri.parse('https://sismob.trisakti.ac.id/api/get-invoice'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"IdLogin": idLogin, "token": token}),
+      final dashboard = await InvoiceService.fetchDashboard(
+        idLogin: session.idLogin,
+        token: session.token,
       );
+      if (!mounted) return;
 
-      final responseHistory = await http.post(
-        Uri.parse('https://sismob.trisakti.ac.id/api/get-payment'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"IdLogin": idLogin, "token": token}),
-      );
+      setState(() {
+        singleInvoice = dashboard.invoices.singleInvoice;
+        detailInvoices = dashboard.invoices.detailInvoices;
+        camabaInvoices = dashboard.invoices.camabaInvoices;
+        paymentHistory = dashboard.paymentHistory;
+        openInvoiceData = dashboard.openInvoiceAction;
+        canGenerateInvoice = dashboard.openInvoiceAction != null;
 
-      if (responseInvoice.statusCode == 200 &&
-          responseHistory.statusCode == 200) {
-        final dataInv = InvoiceResponseData.fromJson(
-          json.decode(responseInvoice.body) as Map<String, dynamic>,
-        );
-        final dataHist = json.decode(responseHistory.body) as Map<String, dynamic>;
-
-        setState(() {
-          singleInvoice = dataInv.singleInvoice;
-          detailInvoices = dataInv.detailInvoices;
-          camabaInvoices = dataInv.camabaInvoices;
-          paymentHistory = ((dataHist['body']?['data'] as List?) ?? [])
-              .whereType<Map>()
-              .map(
-                (item) => PaymentHistoryEntry.fromJson(
-                  Map<String, dynamic>.from(item),
-                ),
-              )
-              .toList();
-
-          // --- LOGIKA BARU DI SINI ---
-          // Reset dulu agar tidak duplikat saat refresh
-          selectedDetailIndexes.clear();
-
-          for (int i = 0; i < detailInvoices.length; i++) {
-            // Jika status_calculate adalah "1", masukkan ke daftar terpilih
-            if (detailInvoices[i].isCalculated) {
-              selectedDetailIndexes.add(i);
-            }
-          }
-        });
-      }
-      await _checkIsAnyOpenInvoice(token, idLogin);
+        selectedDetailIndexes = [
+          for (int i = 0; i < detailInvoices.length; i++)
+            if (detailInvoices[i].isCalculated) i,
+        ];
+      });
     } catch (e) {
       debugPrint("Error: $e");
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
@@ -136,54 +115,43 @@ class _InvoicePageState extends State<InvoicePage> {
   Future<void> _handleRecalculate() async {
     _showLoading(); // Tampilkan loading spinner
 
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
+    final session = await SessionService.loadSession();
+    if (session == null) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      _showErrorSnackBar("Sesi login tidak ditemukan");
+      return;
+    }
 
-    // 1. UBAH DI SINI: Ambil 'id_invoice' sebagai pengganti 'bill_number'
     List<String> selectedInvoiceIds = selectedDetailIndexes.map((index) {
-      // Pastikan key-nya adalah 'id_invoice' sesuai dengan struktur data API Anda
       return detailInvoices[index].idInvoice;
     }).toList();
 
-    // 2. Gabungkan menjadi string yang dipisahkan koma (e.g., "123,124")
-    String idSetString = selectedInvoiceIds.join(',');
-
     try {
-      final response = await http.post(
-        Uri.parse('https://sismob.trisakti.ac.id/api/recalculate-invoice'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "IdLogin": idLogin,
-          "token": token,
-          "idset": idSetString, // Sekarang idset berisi kumpulan id_invoice
-        }),
+      final success = await InvoiceService.recalculateInvoice(
+        idLogin: session.idLogin,
+        token: session.token,
+        invoiceIds: selectedInvoiceIds,
       );
 
-      debugPrint("Kirimannya: $idSetString");
-
+      if (!mounted) return;
       Navigator.pop(context); // Tutup loading spinner
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['status'] == 200 && data['body'] != null) {
-          // Jika berhasil, panggil fetchInvoices lagi untuk memperbarui UI
-          await fetchInvoices();
+      if (success) {
+        await fetchInvoices();
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("VA Berhasil Diperbarui"),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data?['data']), backgroundColor: Colors.red),
-          );
-        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("VA Berhasil Diperbarui"),
+            backgroundColor: Colors.green,
+          ),
+        );
       } else {
         _showErrorSnackBar("Gagal memperbarui VA");
       }
     } catch (e) {
+      if (!mounted) return;
       Navigator.pop(context);
       _showErrorSnackBar("Terjadi kesalahan jaringan");
     }
@@ -194,37 +162,6 @@ class _InvoicePageState extends State<InvoicePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
-  }
-
-  Future<void> _checkIsAnyOpenInvoice(String? token, String? idLogin) async {
-    final url = Uri.parse('https://sismob.trisakti.ac.id/api/cek-open-invoice');
-    try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"IdLogin": idLogin, "token": token}),
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        // Jika statusnya 200 dan body tidak null, berarti ada tagihan yang bisa dibuat
-        if (data['status'] == 200 && data['body'] != null) {
-          setState(() {
-            canGenerateInvoice = true;
-            openInvoiceData = OpenInvoiceAction.fromJson(
-              Map<String, dynamic>.from(data['body']),
-            );
-          });
-        } else {
-          setState(() {
-            canGenerateInvoice = false;
-            openInvoiceData = null;
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint("Error Cek Open Invoice: $e");
-    }
   }
 
   Widget _buildMainInvoiceCard() {
@@ -364,7 +301,10 @@ class _InvoicePageState extends State<InvoicePage> {
   // Ubah pemanggilan di dalam build() atau ganti fungsi _checkOpenInvoice menjadi ini:
   void _handleCreateInvoice() {
     if (openInvoiceData != null) {
-      _generateInvoice(openInvoiceData!.idSemester, openInvoiceData!.idActivity);
+      _generateInvoice(
+        openInvoiceData!.idSemester,
+        openInvoiceData!.idActivity,
+      );
     }
   }
 
@@ -375,29 +315,29 @@ class _InvoicePageState extends State<InvoicePage> {
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
-    final url = Uri.parse('https://sismob.trisakti.ac.id/api/generate-invoice');
+    final session = await SessionService.loadSession();
+    if (session == null) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      _showErrorSnackBar("Sesi login tidak ditemukan");
+      return;
+    }
 
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "IdLogin": idLogin,
-          "token": token,
-          "IdSemester": idSemester,
-          "idactivity": idActivity,
-          "cuti": "",
-        }),
+      final result = await InvoiceService.generateInvoice(
+        idLogin: session.idLogin,
+        token: session.token,
+        idSemester: idSemester,
+        idActivity: idActivity,
       );
 
       if (mounted) Navigator.pop(context); // Tutup loading
+      if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        // Tampilkan Modal dengan data rincian biaya yang didapat
-        _showResultModal(true, "Rincian biaya berhasil ditarik", data['body']);
+      if (result != null) {
+        _showResultModal(true, "Rincian biaya berhasil ditarik", result);
+      } else {
+        _showResultModal(false, "Rincian biaya tidak ditemukan", null);
       }
     } catch (e) {
       if (mounted) Navigator.pop(context);
@@ -406,7 +346,7 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   /// Fungsi untuk menyetujui tagihan (Hit API approve-invoice)
-  Future<void> _approveInvoice(Map<String, dynamic> invoiceData) async {
+  Future<void> _approveInvoice(GeneratedInvoiceBundle invoiceData) async {
     // Tampilkan loading
     showDialog(
       context: context,
@@ -414,74 +354,40 @@ class _InvoicePageState extends State<InvoicePage> {
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
-    final url = Uri.parse('https://sismob.trisakti.ac.id/api/approve-invoice');
+    final session = await SessionService.loadSession();
+    if (session == null) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      _showErrorSnackBar("Sesi login tidak ditemukan");
+      return;
+    }
 
-    // 1. Mapping Item (Tetap sama, mengubah Map bundledetail ke List)
-    List<Map<String, dynamic>> itemsList = [];
-    final bundleDetail = invoiceData['bundledetail'] as Map<String, dynamic>;
-    bundleDetail.forEach((key, value) {
-      itemsList.add({
-        "fi_id": value['fi_id'].toString(),
-        "fi_name": value['fi_name'],
-        "fi_name_short": value['fi_name_short'],
-        "amount": value['amount'],
-      });
-    });
-
-    // 2. Persiapkan Body Request Terbaru
-    final Map<String, dynamic> requestBody = {
-      "token": token,
-      "IdLogin": idLogin,
-      "IdSemester": invoiceData['IdSemesterMaster'].toString(),
-      "description":
-          invoiceData['descriptiom'], // Typo dari API generate: 'descriptiom'
-      "close": "c",
-      "idactivity": invoiceData['idActivity'].toString(),
-      "payment": "1",
-      "idinvoice": "",
-      "fs_id": invoiceData['fs_id'].toString(),
-      "id_calendar":
-          invoiceData['id_calendar']?.toString() ?? "9527", // Field Baru
-      "item": itemsList,
-      "discount": [
-        // Sekarang berbentuk List, bukan Map
-        {
-          "id_discount": "1",
-          "item": [
-            {"fi_id": "2", "amount": "2000"},
-            {"fi_id": "11", "amount": "4000"},
-          ],
-        },
-      ],
-    };
+    final requestBody = ApproveInvoiceRequest.fromGeneratedBundle(
+      bundle: invoiceData,
+      token: session.token,
+      idLogin: session.idLogin,
+    );
 
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(requestBody),
-      );
+      final resData = await InvoiceService.approveInvoice(request: requestBody);
 
       if (mounted) Navigator.pop(context);
+      if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        final resData = json.decode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              resData['body']?['message'] ?? "Tagihan Berhasil Dibuat!",
-            ),
-            backgroundColor: Colors.green,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            resData.message.isEmpty
+                ? "Tagihan Berhasil Dibuat!"
+                : resData.message,
           ),
-        );
-        fetchInvoices();
-      } else {
-        throw "Gagal (Status: ${response.statusCode})";
-      }
+          backgroundColor: Colors.green,
+        ),
+      );
+      fetchInvoices();
     } catch (e) {
       if (mounted) Navigator.pop(context);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Error Approve: $e"),
@@ -561,7 +467,11 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-  void _showResultModal(bool isSuccess, String message, dynamic data) {
+  void _showResultModal(
+    bool isSuccess,
+    String message,
+    GeneratedInvoiceBundle? invoiceData,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled:
@@ -570,19 +480,8 @@ class _InvoicePageState extends State<InvoicePage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        // Jika sukses, kita ambil data bundle pertama dari list 'data'
-        final invoiceData = (isSuccess && data['data'] != null)
-            ? data['data'][0]
-            : null;
-        final bundleDetail = invoiceData != null
-            ? invoiceData['bundledetail'] as Map<String, dynamic>
-            : {};
-
-        // Hitung Total Otomatis
-        double totalAmount = 0;
-        bundleDetail.forEach((key, value) {
-          totalAmount += double.tryParse(value['amount'].toString()) ?? 0;
-        });
+        final bundleItems = invoiceData?.bundleItems ?? const [];
+        final totalAmount = invoiceData?.totalAmount ?? 0;
 
         return DraggableScrollableSheet(
           initialChildSize: 0.6,
@@ -625,7 +524,9 @@ class _InvoicePageState extends State<InvoicePage> {
                   ),
                   Text(
                     isSuccess == true
-                        ? invoiceData['SemesterMainName'] ?? "-"
+                        ? (invoiceData?.semesterMainName.isNotEmpty ?? false)
+                              ? invoiceData!.semesterMainName
+                              : "-"
                         : "-",
                     textAlign: TextAlign.center,
                     style: const TextStyle(
@@ -636,15 +537,13 @@ class _InvoicePageState extends State<InvoicePage> {
                   ),
                   const Divider(height: 32),
 
-                  if (isSuccess) ...[
+                  if (isSuccess && invoiceData != null) ...[
                     Expanded(
                       child: ListView.builder(
                         controller: scrollController,
-                        itemCount: bundleDetail.length,
+                        itemCount: bundleItems.length,
                         itemBuilder: (context, index) {
-                          // Mengambil key Map (0, 1, 2, dst)
-                          String key = bundleDetail.keys.elementAt(index);
-                          var item = bundleDetail[key];
+                          final item = bundleItems[index];
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 6),
                             child: Row(
@@ -652,12 +551,12 @@ class _InvoicePageState extends State<InvoicePage> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    item['fi_name'],
+                                    item.fiName,
                                     style: const TextStyle(fontSize: 13),
                                   ),
                                 ),
                                 Text(
-                                  formatRupiah(item['amount']),
+                                  formatRupiah(item.amount),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w600,
                                     fontSize: 13,
@@ -865,7 +764,7 @@ class _InvoicePageState extends State<InvoicePage> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    "Metode: ${item.payments.first.paymentMode} • ${item.payments.first.paymentDate.split(' ').first}",
+                    "Metode: ${item.payments.first.paymentMode} â€¢ ${item.payments.first.paymentDate.split(' ').first}",
                     style: const TextStyle(
                       fontSize: 10,
                       color: Colors.grey,
@@ -929,106 +828,6 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInvoiceCard(InvoiceRecord item, bool isPaid) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade300),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    item.description,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                _statusChip(isPaid),
-              ],
-            ),
-            const Divider(height: 24),
-            // _rowDetail("Nomor Tagihan", item['bill_number']),
-            if (item.va.isNotEmpty)
-              _rowDetail("Nomor Virtual Account", item.va),
-            _rowDetail("Total Tagihan", formatRupiah(item.billAmount)),
-            if (!isPaid)
-              _rowDetail("Sisa Tagihan", formatRupiah(item.billBalance), isBold: true),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _rowDetail(String label, String value, {bool isBold = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statusChip(bool isPaid) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: isPaid
-            ? Colors.green.withAlpha(26)
-            : Colors.orange.withAlpha(26),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        isPaid ? "Lunas" : "Belum Bayar",
-        style: TextStyle(
-          color: isPaid ? Colors.green : Colors.orange,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
   // Widget untuk baris informasi (Tanggal, Invoice, dll)
   Widget _rowInfo(String label, String value) {
     return Padding(
@@ -1052,46 +851,6 @@ class _InvoicePageState extends State<InvoicePage> {
   }
 
   // Widget untuk item rincian dengan checkbox (BPP Pokok, SKS, dll)
-  Widget _buildSubItem(InvoiceRecord item) {
-    return Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 5),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.check_box_outline_blank, color: primaryBlue, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              item.description,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: primaryBlue,
-              ),
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 20,
-            color: Colors.grey.shade300,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-          ),
-          Text(
-            "Total Tagihan : ${formatRupiah(item.billAmount)}",
-            style: TextStyle(fontSize: 11, color: primaryBlue),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildActiveInvoiceTab() {
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -1156,42 +915,12 @@ class _InvoicePageState extends State<InvoicePage> {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      height: 140,
-      decoration: BoxDecoration(
-        color: primaryBlue,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(40),
-          bottomRight: Radius.circular(40),
-        ),
-      ),
-      padding: const EdgeInsets.only(top: 50, left: 10),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          const Text(
-            "Account Statement",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildDetailItemCard(InvoiceRecord item, int index) {
     bool isSelected = selectedDetailIndexes.contains(index);
 
     return GestureDetector(
-      onTap: () => _showDetailModal(item.toPreviewData()), // Klik teks/kartu buka modal
+      onTap: () =>
+          _showDetailModal(item.toPreviewData()), // Klik teks/kartu buka modal
       child: Container(
         margin: const EdgeInsets.only(top: 10),
         padding: const EdgeInsets.all(12),

@@ -1,3 +1,4 @@
+import 'package:chatbot/models/auth_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthStorage {
@@ -27,6 +28,40 @@ class AuthStorage {
     if (color != null) await prefs.setString(_keyColor, color);
     if (photoBase64 != null) await prefs.setString(_keyPhoto, photoBase64);
     if (active != null) await prefs.setString(_keyActive, active);
+  }
+
+  static Future<void> saveSession(AuthSession session) async {
+    await saveAuth(
+      token: session.token,
+      idLogin: session.idLogin,
+      userId: session.userId,
+      nim: session.nim,
+      color: session.color,
+      photoBase64: session.photoBase64,
+      active: session.active,
+    );
+  }
+
+  static Future<AuthSession?> loadSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_keyToken);
+    final idLogin = prefs.getString(_keyIdLogin);
+    final userId = prefs.getString(_keyUserId);
+    final nim = prefs.getString(_keyNim);
+
+    if (token == null || idLogin == null || userId == null || nim == null) {
+      return null;
+    }
+
+    return AuthSession(
+      token: token,
+      idLogin: idLogin,
+      userId: userId,
+      nim: nim,
+      color: prefs.getString(_keyColor),
+      photoBase64: prefs.getString(_keyPhoto),
+      active: prefs.getString(_keyActive),
+    );
   }
 
   static Future<String?> getToken() async {

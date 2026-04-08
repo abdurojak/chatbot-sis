@@ -29,13 +29,16 @@ class _ExamSlipPageState extends State<ExamSlipPage> {
 
   Future<void> fetchExamSlips() async {
     try {
+      final session = await AuthStorage.loadSession();
+      if (session == null) {
+        setState(() => isLoading = false);
+        return;
+      }
+
       final response = await http.post(
         Uri.parse('https://sismob.trisakti.ac.id/api/exam-slip'),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "IdLogin": "222400",
-          "token": "2ecd29cb3d15a3f77c9a87412c97c7da",
-        }),
+        body: jsonEncode({"IdLogin": session.idLogin, "token": session.token}),
       );
 
       if (response.statusCode == 200) {
@@ -53,10 +56,9 @@ class _ExamSlipPageState extends State<ExamSlipPage> {
     }
   }
 
-  Future<Map<String, String?>> _loadHeaderData() async {
-    final photo = await AuthStorage.getPhotoBase64();
-    final nim = await AuthStorage.getNim();
-    return {'photo': photo, 'nim': nim};
+  Future<(String?, String?)> _loadHeaderData() async {
+    final session = await AuthStorage.loadSession();
+    return (session?.photoBase64, session?.nim);
   }
 
   // --- REUSABLE PDF COMPONENTS ---
@@ -102,8 +104,9 @@ class _ExamSlipPageState extends State<ExamSlipPage> {
     final logoImage = pw.MemoryImage(logoBytes);
 
     Uint8List? photoBytes;
-    if (headerInfo['photo'] != null)
-      photoBytes = base64Decode(headerInfo['photo']!.split(',').last);
+    if (headerInfo.$1 != null) {
+      photoBytes = base64Decode(headerInfo.$1!.split(',').last);
+    }
 
     pdf.addPage(
       pw.Page(
@@ -186,8 +189,9 @@ class _ExamSlipPageState extends State<ExamSlipPage> {
     final List<dynamic> details = data['detail'] ?? [];
 
     Uint8List? photoBytes;
-    if (headerInfo['photo'] != null)
-      photoBytes = base64Decode(headerInfo['photo']!.split(',').last);
+    if (headerInfo.$1 != null) {
+      photoBytes = base64Decode(headerInfo.$1!.split(',').last);
+    }
 
     // Await the header widget before building the page
     final pdfHeaderWidget = await _buildPdfHeaderComponent(logoImage);

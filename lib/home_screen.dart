@@ -53,16 +53,16 @@ class _HomeScreenState extends State<HomeScreen> {
   // ================= HEADER =================
   Widget _header() {
     return FutureBuilder(
-      future: _loadHeaderData(),
+      future: AuthStorage.loadSession(),
       builder: (context, snapshot) {
-        final data = snapshot.data;
+        final session = snapshot.data;
 
         Uint8List? photoBytes;
         String name = 'Mahasiswa';
 
-        if (data != null) {
-          final base64Photo = data['photo'];
-          final nim = data['nim'];
+        if (session != null) {
+          final base64Photo = session.photoBase64;
+          final nim = session.nim;
 
           if (base64Photo != null && base64Photo.isNotEmpty) {
             final pureBase64 = base64Photo
@@ -71,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
             photoBytes = base64Decode(pureBase64);
           }
 
-          name = nim ?? 'Mahasiswa';
+          name = nim;
         }
 
         return Container(
@@ -111,14 +111,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
-  }
-
-  // ================= AMBIL DATA FOTO =================
-  Future<Map<String, String?>> _loadHeaderData() async {
-    final photo = await AuthStorage.getPhotoBase64();
-    final nim = await AuthStorage.getNim();
-
-    return {'photo': photo, 'nim': nim};
   }
 
   // ================= BOTTOM BAR =================

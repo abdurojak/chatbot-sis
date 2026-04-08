@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'package:chatbot/chat_screen.dart';
 import 'package:chatbot/component/app_theme.dart';
+import 'package:chatbot/services/auth_service.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 class OtpVerificationScreen extends StatefulWidget {
   final String idOtp;
@@ -30,16 +29,17 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   @override
   void dispose() {
-    for (final c in _controllers) {
-      c.dispose();
+    for (final controller in _controllers) {
+      controller.dispose();
     }
-    for (final f in _focusNodes) {
-      f.dispose();
+    for (final focusNode in _focusNodes) {
+      focusNode.dispose();
     }
     super.dispose();
   }
 
-  String get _otpCode => _controllers.map((c) => c.text.trim()).join();
+  String get _otpCode =>
+      _controllers.map((controller) => controller.text.trim()).join();
 
   Future<void> _verifyOtp() async {
     if (_otpCode.length != otpLength) {
@@ -50,27 +50,26 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await http.post(
-        Uri.parse('https://sismob.trisakti.ac.id/api/otp-verification'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"id_otp": widget.idOtp, "kode_otp": _otpCode}),
+      final result = await AuthService.verifyOtp(
+        idOtp: widget.idOtp,
+        otpCode: _otpCode,
       );
 
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
+      if (result.isSuccess) {
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const ChatDetailPage()),
         );
       } else {
-        _showMessage(data['message'] ?? 'OTP tidak valid');
+        _showMessage(result.message);
       }
     } catch (e) {
       _showMessage('Terjadi error: $e');
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -89,16 +88,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           child: Column(
             children: [
               const SizedBox(height: 40),
-
-              // LOGO
               Image.asset(
                 'assets/images/logo_trisakti.png',
                 width: 120,
                 color: Colors.white,
               ),
-
               const SizedBox(height: 40),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Container(
@@ -118,7 +113,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "OTP Verification",
+                        'OTP Verification',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -127,20 +122,18 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        "Masukkan kode OTP yang dikirim ke email kamu",
+                        'Masukkan kode OTP yang dikirim ke email kamu',
                         style: TextStyle(color: Colors.white),
                       ),
-
                       const SizedBox(height: 24),
-
-                      // OTP INPUT
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(otpLength, (i) => _otpBox(i)),
+                        children: List.generate(
+                          otpLength,
+                          (index) => _otpBox(index),
+                        ),
                       ),
-
                       const SizedBox(height: 32),
-
                       SizedBox(
                         width: double.infinity,
                         height: 48,
@@ -158,7 +151,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                   color: Colors.white,
                                 )
                               : const Text(
-                                  "Confirm",
+                                  'Confirm',
                                   style: TextStyle(fontSize: 16),
                                 ),
                         ),
@@ -184,11 +177,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
         maxLength: 1,
-        onChanged: (val) {
-          if (val.isNotEmpty && index < otpLength - 1) {
+        onChanged: (value) {
+          if (value.isNotEmpty && index < otpLength - 1) {
             FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
           }
-          if (val.isEmpty && index > 0) {
+          if (value.isEmpty && index > 0) {
             FocusScope.of(context).requestFocus(_focusNodes[index - 1]);
           }
         },

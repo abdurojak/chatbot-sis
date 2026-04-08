@@ -1,8 +1,8 @@
-import 'dart:convert';
-import 'package:chatbot/component/authentication.dart';
 import 'package:chatbot/component/app_theme.dart';
+import 'package:chatbot/models/krs_models.dart';
+import 'package:chatbot/services/krs_service.dart';
+import 'package:chatbot/services/session_service.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 class SubmitKrsScreen extends StatefulWidget {
   final String idSemester;
@@ -17,10 +17,9 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
   bool _isLoading = true;
   String? _error;
 
-  List<Map<String, dynamic>> _krsList = [];
-  List<String> _selectedCourses = [];
-
-  List<Map<String, dynamic>> _semesters = [];
+  List<KrsEnrollment> _krsList = const [];
+  final List<String> _selectedCourses = [];
+  List<SemesterInfo> _semesters = const [];
 
   int semesterLevel = 0;
   int totalSks = 0;
@@ -34,175 +33,153 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
     _init();
   }
 
-  Future<void> _init() async {
-    await _fetchSemesters();
-    await _fetchKrs();
+  Future<(String?, String?)> _getAuth() async {
+    final session = await SessionService.loadSession();
+    return (session?.token, session?.idLogin);
   }
 
-  /// ================= FETCH SEMESTER =================
+  Future<void> _init() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      await _fetchSemesters();
+      await _fetchKrs();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   Future<void> _fetchSemesters() async {
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
+    final (token, idLogin) = await _getAuth();
+    if (token == null || idLogin == null) {
+      return;
+    }
 
-    final res = await http.post(
-      Uri.parse('https://sismob.trisakti.ac.id/api/get-semester'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"IdLogin": idLogin, "token": token}),
+    final semesters = await KrsService.getSemesters(
+      idLogin: idLogin,
+      token: token,
     );
 
-    final json = jsonDecode(res.body);
-
-    final List list = json['body']?['semester'] ?? [];
-
+    if (!mounted) return;
     setState(() {
-      _semesters = List<Map<String, dynamic>>.from(list);
-      semesterLevel = _semesters.length;
+      _semesters = semesters;
+      semesterLevel = semesters.length;
     });
   }
 
-  /// ================= FETCH KRS =================
-
   Future<void> _fetchKrs() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final token = await AuthStorage.getToken();
-      final idLogin = await AuthStorage.getIdLogin();
-
-      final res = await http.post(
-        Uri.parse('https://sismob.trisakti.ac.id/api/get-krs'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "IdLogin": idLogin,
-          "token": token,
-          "IdSemester": widget.idSemester,
-        }),
-      );
-
-      final json = jsonDecode(res.body);
-
-      if (res.statusCode == 200) {
-        final List list = json['body']?['kelas'] ?? [];
-
-        int sks = 0;
-
-        for (var item in list) {
-          sks += int.tryParse(item['sks'].toString()) ?? 0;
-        }
-
-        if (!mounted) return;
-
-        setState(() {
-          _krsList = List<Map<String, dynamic>>.from(list);
-          _selectedCourses.clear();
-          totalSks = sks;
-        });
-      }
-    } catch (e) {
-      _error = e.toString();
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    final (token, idLogin) = await _getAuth();
+    if (token == null || idLogin == null) {
+      return;
     }
-  }
 
-  /// ================= SEND OTP =================
+    final krs = await KrsService.getKrs(
+      idLogin: idLogin,
+      token: token,
+      idSemester: widget.idSemester,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _krsList = krs;
+      _selectedCourses.clear();
+      totalSks = krs.fold<int>(0, (sum, item) => sum + item.creditsValue);
+    });
+  }
 
   Future<String?> _sendOtp() async {
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
-
-    final res = await http.post(
-      Uri.parse('https://sismob.trisakti.ac.id/api/send-otp'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"IdLogin": idLogin, "token": token}),
-    );
-
-    final json = jsonDecode(res.body);
-
-    if (res.statusCode == 200) {
-      return json['body']?['id_otp']?.toString();
+    final (token, idLogin) = await _getAuth();
+    if (token == null || idLogin == null) {
+      return null;
     }
 
-    return null;
-  }
+    final result = await KrsService.sendOtp(idLogin: idLogin, token: token);
 
-  /// ================= CANCEL COURSE =================
+    return result?.idOtp;
+  }
 
   Future<void> _cancelCourse(String otp, String idOtp) async {
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
+    final (token, idLogin) = await _getAuth();
+    if (token == null || idLogin == null) {
+      return;
+    }
 
-    final res = await http.post(
-      Uri.parse('https://sismob.trisakti.ac.id/api/cancel-course'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "IdLogin": idLogin,
-        "token": token,
-        "otp": otp,
-        "id_otp": idOtp,
-        "courses": _selectedCourses,
-      }),
+    final result = await KrsService.cancelCourses(
+      idLogin: idLogin,
+      token: token,
+      otp: otp,
+      idOtp: idOtp,
+      courses: _selectedCourses,
     );
 
-    final json = jsonDecode(res.body);
+    if (!mounted) return;
 
-    if (res.statusCode == 200) {
-      Navigator.pop(context);
+    Navigator.pop(context);
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Berhasil Drop MK")));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result.isSuccess
+              ? 'Berhasil drop mata kuliah'
+              : result.message.isNotEmpty
+              ? result.message
+              : 'Gagal drop mata kuliah',
+        ),
+      ),
+    );
 
-      _fetchKrs();
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(json['message'] ?? "Gagal Drop")));
+    if (result.isSuccess) {
+      await _fetchKrs();
     }
   }
 
-  /// ================= OTP DIALOG =================
-
   Future<void> _showOtpDialog() async {
-    if (_selectedCourses.isEmpty) return;
+    if (_selectedCourses.isEmpty) {
+      return;
+    }
 
     final idOtp = await _sendOtp();
+    if (!mounted) return;
 
     if (idOtp == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Gagal kirim OTP")));
+      ).showSnackBar(const SnackBar(content: Text('Gagal kirim OTP')));
       return;
     }
 
     final otpController = TextEditingController();
+    final selectedItems = _krsList
+        .where((item) => _selectedCourses.contains(item.idRegister))
+        .toList();
 
-    showDialog(
+    await showDialog<void>(
       context: context,
-      builder: (context) {
-        final selectedItems = _krsList
-            .where((e) => _selectedCourses.contains(e['IdRegister'].toString()))
-            .toList();
-
+      builder: (dialogContext) {
         return AlertDialog(
-          title: const Text("Konfirmasi Drop MK"),
+          title: const Text('Konfirmasi Drop MK'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ...selectedItems.map(
-                (e) => ListTile(
-                  title: Text("${e['kodemk']} - ${e['namamk']}"),
-                  subtitle: Text("Kelas: ${e['namakelas']}"),
+                (item) => ListTile(
+                  title: Text('${item.code} - ${item.courseName}'),
+                  subtitle: Text('Kelas: ${item.className}'),
                 ),
               ),
-
               const SizedBox(height: 12),
-
               TextField(
                 controller: otpController,
                 decoration: const InputDecoration(
-                  labelText: "Masukkan OTP",
+                  labelText: 'Masukkan OTP',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -210,22 +187,20 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
           ),
           actions: [
             TextButton(
-              child: const Text("Batal"),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Batal'),
             ),
             ElevatedButton(
-              child: const Text("Drop"),
-              onPressed: () {
-                _cancelCourse(otpController.text, idOtp);
+              onPressed: () async {
+                await _cancelCourse(otpController.text, idOtp);
               },
+              child: const Text('Drop'),
             ),
           ],
         );
       },
     );
   }
-
-  /// ================= INFO ROW =================
 
   Widget _infoRow(String title, String value) {
     return Padding(
@@ -245,68 +220,34 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
       ),
     );
   }
-  // Widget _infoRow(String label, String value) {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(vertical: 4),
-  //     child: Row(
-  //       children: [
-  //         Expanded(flex: 2, child: Text(label)),
-  //         const Text(": "),
-  //         Expanded(
-  //           flex: 3,
-  //           child: Text(
-  //             value,
-  //             style: const TextStyle(fontWeight: FontWeight.bold),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  /// ================= UI =================
 
   @override
   Widget build(BuildContext context) {
+    final selectedSemester = _semesters.where(
+      (semester) => semester.idSemesterMaster == widget.idSemester,
+    );
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("KRS Saya"),
+        title: const Text('KRS Saya'),
         backgroundColor: primaryBlue,
         foregroundColor: Colors.white,
       ),
-
       floatingActionButton: _selectedCourses.isNotEmpty
           ? FloatingActionButton.extended(
               onPressed: _showOtpDialog,
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
-              label: const Text("Drop MK"),
+              label: const Text('Drop MK'),
               icon: const Icon(Icons.delete),
             )
           : null,
-
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Center(child: Text(_error!))
           : Column(
               children: [
-                // /// ===== INFO BOX =====
-                // Padding(
-                //   padding: const EdgeInsets.all(16),
-                //   child: Column(
-                //     children: [
-                //       _infoRow(
-                //         "Semester to Register",
-                //         _semesters.isNotEmpty
-                //             ? _semesters.first["SemesterMainName"]
-                //             : "-",
-                //       ),
-                //       _infoRow("Semester Level", semesterLevel.toString()),
-                //       _infoRow("Total Credit", "$totalSks/$maxSks"),
-                //     ],
-                //   ),
-                // ),
-
-                /// ======= INFO CARD =======
                 Container(
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(14),
@@ -320,67 +261,55 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
                   child: Column(
                     children: [
                       _infoRow(
-                        "Semester to Register",
-                        _semesters.isNotEmpty
-                            ? _semesters.first["SemesterMainName"]
-                            : "-",
+                        'Semester to Register',
+                        selectedSemester.isNotEmpty
+                            ? selectedSemester.first.semesterMainName
+                            : _semesters.isNotEmpty
+                            ? _semesters.first.semesterMainName
+                            : '-',
                       ),
-                      _infoRow("Semester Level", semesterLevel.toString()),
-                      _infoRow("Total Credit", "$totalSks/$maxSks"),
+                      _infoRow('Semester Level', semesterLevel.toString()),
+                      _infoRow('Total Credit', '$totalSks/$maxSks'),
                     ],
                   ),
                 ),
-
-                /// ===== LIST KRS =====
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: _krsList.length,
                     itemBuilder: (context, index) {
                       final item = _krsList[index];
-
-                      final bool isApproved =
-                          item['persetujuan'].toString() == "1";
-
-                      final bool canCancel = !isApproved;
+                      final isApproved = item.isApproved;
+                      final canCancel = !isApproved;
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         child: CheckboxListTile(
                           controlAffinity: ListTileControlAffinity.leading,
-                          value: _selectedCourses.contains(
-                            item['IdRegister'].toString(),
-                          ),
+                          value: _selectedCourses.contains(item.idRegister),
                           onChanged: canCancel
-                              ? (val) {
+                              ? (selected) {
                                   setState(() {
-                                    final id = item['IdRegister'].toString();
-
-                                    if (val == true) {
-                                      _selectedCourses.add(id);
+                                    if (selected == true) {
+                                      _selectedCourses.add(item.idRegister);
                                     } else {
-                                      _selectedCourses.remove(id);
+                                      _selectedCourses.remove(item.idRegister);
                                     }
                                   });
                                 }
                               : null,
-
                           title: Text(
-                            "${item['kodemk']} - ${item['namamk']}",
+                            '${item.code} - ${item.courseName}',
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
-
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 4),
-
                               Text(
-                                "Kelas: ${item['namakelas']} | SKS: ${item['sks']}",
+                                'Kelas: ${item.className} | SKS: ${item.credits}',
                               ),
-
                               const SizedBox(height: 8),
-
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 10,
@@ -394,8 +323,8 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
                                 ),
                                 child: Text(
                                   isApproved
-                                      ? "Disetujui"
-                                      : "Menunggu Persetujuan",
+                                      ? 'Disetujui'
+                                      : 'Menunggu Persetujuan',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,

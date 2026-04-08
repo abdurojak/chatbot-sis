@@ -1,8 +1,8 @@
-import 'dart:convert';
-import 'package:chatbot/component/authentication.dart';
 import 'package:chatbot/component/app_theme.dart';
+import 'package:chatbot/models/krs_models.dart';
+import 'package:chatbot/services/krs_service.dart';
+import 'package:chatbot/services/session_service.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 class HasilKrsPage extends StatefulWidget {
   const HasilKrsPage({super.key});
@@ -15,8 +15,9 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
   Color get primaryBlue => AppThemePalette.primary;
 
   bool isLoading = true;
-  List kelasList = [];
-  List<Map<String, dynamic>> _semesters = [];
+  String? _error;
+  List<KrsEnrollment> kelasList = const [];
+  List<SemesterInfo> _semesters = const [];
 
   String? _selectedSemesterId;
 
@@ -26,112 +27,106 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
     _initializeData();
   }
 
+  Future<(String?, String?)> _getAuth() async {
+    final session = await SessionService.loadSession();
+    return (session?.token, session?.idLogin);
+  }
+
   Future<void> _initializeData() async {
-    await _fetchDefaultSemester();
-    await _fetchSemesters();
-    await fetchKrs();
-  }
+    setState(() {
+      isLoading = true;
+      _error = null;
+    });
 
-  /// =========================
-  /// 1️⃣ GET DEFAULT SEMESTER
-  /// =========================
-  Future<void> _fetchDefaultSemester() async {
-    final url = Uri.parse('https://sismob.trisakti.ac.id/api/krs-requirement');
-
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
-
-    final res = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"IdLogin": idLogin, "token": token}),
-    );
-
-    final json = jsonDecode(res.body);
-
-    final String semester = json['body']?['IdSemesterMain'] ?? '';
-
-    _selectedSemesterId = semester;
-  }
-
-  /// =========================
-  /// 2️⃣ GET SEMESTER LIST
-  /// =========================
-  Future<void> _fetchSemesters() async {
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
-    final res = await http.post(
-      Uri.parse('https://sismob.trisakti.ac.id/api/get-semester'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"token": token, "IdLogin": idLogin}),
-    );
-
-    final json = jsonDecode(res.body);
-
-    if (res.statusCode == 200) {
-      final List list = json['body']?['semester'] ?? [];
-
-      setState(() {
-        _semesters = List<Map<String, dynamic>>.from(list);
-
-        final matched = _semesters.firstWhere(
-          (e) => e['IdSemesterMaster']?.toString() == _selectedSemesterId,
-          orElse: () => _semesters.isNotEmpty ? _semesters.first : {},
-        );
-
-        _selectedSemesterId = matched['IdSemesterMaster']?.toString();
-      });
+    try {
+      await _fetchDefaultSemester();
+      await _fetchSemesters();
+      await fetchKrs();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
-  /// =========================
-  /// 3️⃣ FETCH KRS
-  /// =========================
-  Future<void> fetchKrs() async {
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
-    if (_selectedSemesterId == null) return;
+  Future<void> _fetchDefaultSemester() async {
+    final (token, idLogin) = await _getAuth();
+    if (token == null || idLogin == null) {
+      return;
+    }
 
-    setState(() => isLoading = true);
-
-    final url = Uri.parse('https://sismob.trisakti.ac.id/api/get-krs');
-
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "IdLogin": idLogin,
-        "token": token,
-        "IdSemester": _selectedSemesterId,
-      }),
+    final requirement = await KrsService.getRequirements(
+      idLogin: idLogin,
+      token: token,
     );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
+    _selectedSemesterId = requirement.idSemester;
+  }
 
-      setState(() {
-        kelasList = data["body"]?["kelas"] ?? [];
-        isLoading = false;
-      });
-    } else {
-      setState(() {
-        kelasList = [];
-        isLoading = false;
-      });
+  Future<void> _fetchSemesters() async {
+    final (token, idLogin) = await _getAuth();
+    if (token == null || idLogin == null) {
+      return;
+    }
+
+    final semesters = await KrsService.getSemesters(
+      idLogin: idLogin,
+      token: token,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _semesters = semesters;
+
+      final matched = semesters.where(
+        (semester) => semester.idSemesterMaster == _selectedSemesterId,
+      );
+
+      _selectedSemesterId = matched.isNotEmpty
+          ? matched.first.idSemesterMaster
+          : semesters.isNotEmpty
+          ? semesters.first.idSemesterMaster
+          : null;
+    });
+  }
+
+  Future<void> fetchKrs() async {
+    final (token, idLogin) = await _getAuth();
+    if (token == null || idLogin == null || _selectedSemesterId == null) {
+      return;
+    }
+
+    if (mounted) {
+      setState(() => isLoading = true);
+    }
+
+    try {
+      final items = await KrsService.getKrs(
+        idLogin: idLogin,
+        token: token,
+        idSemester: _selectedSemesterId!,
+      );
+
+      if (!mounted) return;
+      setState(() => kelasList = items);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
   void _onSemesterChanged(String? value) {
-    setState(() {
-      _selectedSemesterId = value;
-    });
-
+    setState(() => _selectedSemesterId = value);
     fetchKrs();
   }
 
-  /// =========================
-  /// UI
-  /// =========================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,32 +137,32 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
       ),
       body: Column(
         children: [
-          /// 🔽 DROPDOWN SEMESTER
           Padding(
             padding: const EdgeInsets.all(16),
             child: DropdownButtonFormField<String>(
-              value: _selectedSemesterId,
+              initialValue: _selectedSemesterId,
               decoration: const InputDecoration(
-                labelText: "Pilih Semester",
+                labelText: 'Pilih Semester',
                 border: OutlineInputBorder(),
               ),
-              items: _semesters.map((sem) {
+              items: _semesters.map((semester) {
                 return DropdownMenuItem<String>(
-                  value: sem['IdSemesterMaster']?.toString(),
-                  child: Text(sem['SemesterMainName'] ?? ''),
+                  value: semester.idSemesterMaster,
+                  child: Text(semester.semesterMainName),
                 );
               }).toList(),
               onChanged: _onSemesterChanged,
             ),
           ),
-
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                ? Center(child: Text(_error!))
                 : kelasList.isEmpty
                 ? const Center(
                     child: Text(
-                      "Tidak ada data KRS",
+                      'Tidak ada data KRS',
                       style: TextStyle(fontSize: 16),
                     ),
                   )
@@ -184,8 +179,7 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
       itemCount: kelasList.length,
       itemBuilder: (context, index) {
         final kelas = kelasList[index];
-
-        final isApproved = kelas['persetujuan'] == "1";
+        final isApproved = kelas.isApproved;
 
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
@@ -198,39 +192,31 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "${kelas['kodemk']} - ${kelas['namamk']}",
+                  '${kelas.code} - ${kelas.courseName}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                   ),
                 ),
                 const SizedBox(height: 8),
-
-                Text("SKS: ${kelas['sks']}"),
-                Text("Kelas: ${kelas['namakelas']}"),
-
+                Text('SKS: ${kelas.credits}'),
+                Text('Kelas: ${kelas.className}'),
                 const SizedBox(height: 10),
                 const Text(
-                  "Jadwal:",
+                  'Jadwal:',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 6),
-
-                ...kelas['jadwal'].map<Widget>((jadwal) {
-                  return Padding(
+                ...kelas.schedules.map(
+                  (jadwal) => Padding(
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Text(
-                      "${jadwal['hari']} | "
-                      "${jadwal['mulai']} - ${jadwal['selesai']} | "
-                      "Ruang: ${jadwal['ruang']}",
+                      '${jadwal.day} | ${jadwal.startTime} - ${jadwal.endTime} | Ruang: ${jadwal.room}',
                       style: const TextStyle(fontSize: 13),
                     ),
-                  );
-                }).toList(),
-
+                  ),
+                ),
                 const SizedBox(height: 12),
-
-                /// ✅ STATUS PERSETUJUAN
                 Align(
                   alignment: Alignment.centerRight,
                   child: Container(
@@ -245,7 +231,7 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      isApproved ? "Disetujui" : "Menunggu Persetujuan",
+                      isApproved ? 'Disetujui' : 'Menunggu Persetujuan',
                       style: TextStyle(
                         color: isApproved ? Colors.green : Colors.orange,
                         fontWeight: FontWeight.w600,

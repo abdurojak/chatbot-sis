@@ -1,4 +1,4 @@
-import 'package:chatbot/component/subject_model.dart';
+import 'package:chatbot/models/krs_models.dart';
 import 'package:flutter/material.dart';
 
 class SubjectCard extends StatelessWidget {
@@ -25,7 +25,6 @@ class SubjectCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                /// ROW ATAS (Nama + Badge)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -38,7 +37,6 @@ class SubjectCard extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     if (disabled && statusMsg != null)
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -46,7 +44,7 @@ class SubjectCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: statusMsg == "Kelas Penuh"
+                          color: statusMsg == 'Kelas Penuh'
                               ? Colors.red
                               : Colors.orange,
                           borderRadius: BorderRadius.circular(20),
@@ -61,21 +59,16 @@ class SubjectCard extends StatelessWidget {
                       ),
                   ],
                 ),
-
                 const SizedBox(height: 6),
-
                 Text(
                   subject.kodeMk,
                   style: const TextStyle(color: Colors.grey),
                 ),
-
                 const SizedBox(height: 8),
-
-                /// SKS kanan
                 Align(
                   alignment: Alignment.centerRight,
                   child: Text(
-                    "${subject.sks} SKS",
+                    '${subject.sks} SKS',
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),

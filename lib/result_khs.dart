@@ -1,8 +1,9 @@
-import 'dart:convert';
-import 'package:chatbot/component/authentication.dart';
 import 'package:chatbot/component/app_theme.dart';
+import 'package:chatbot/models/khs_models.dart';
+import 'package:chatbot/models/krs_models.dart';
+import 'package:chatbot/services/khs_service.dart';
+import 'package:chatbot/services/session_service.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 class HasilKhsPage extends StatefulWidget {
   const HasilKhsPage({super.key});
@@ -15,9 +16,15 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
   Color get primaryBlue => AppThemePalette.primary;
 
   bool isLoading = true;
-  List khsDetailList = [];
-  Map<String, dynamic> kinerja = {};
-  List<Map<String, dynamic>> _semesters = [];
+  String? _error;
+  List<KhsCourseDetail> khsDetailList = const [];
+  KhsPerformance kinerja = const KhsPerformance(
+    ips: '0.00',
+    ipk: '0.00',
+    sksSemester: '0',
+    sksLulus: '0',
+  );
+  List<SemesterInfo> _semesters = const [];
   String? _selectedSemesterId;
 
   @override
@@ -26,84 +33,81 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
     _initializeData();
   }
 
-  // ... (Fungsi _initializeData, _fetchDefaultSemester, dan _fetchSemesters tetap sama seperti sebelumnya) ...
+  Future<(String?, String?)> _getAuth() async {
+    final session = await SessionService.loadSession();
+    return (session?.token, session?.idLogin);
+  }
+
   Future<void> _initializeData() async {
-    await _fetchDefaultSemester();
-    await _fetchSemesters();
-    await fetchKhs();
-  }
+    setState(() {
+      isLoading = true;
+      _error = null;
+    });
 
-  Future<void> _fetchDefaultSemester() async {
-    final url = Uri.parse('https://sismob.trisakti.ac.id/api/krs-requirement');
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
     try {
-      final res = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"IdLogin": idLogin, "token": token}),
-      );
-      final json = jsonDecode(res.body);
-      _selectedSemesterId = json['body']?['IdSemesterMain']?.toString();
-    } catch (e) {
-      debugPrint(e.toString());
-    }
-  }
-
-  Future<void> _fetchSemesters() async {
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
-    try {
-      final res = await http.post(
-        Uri.parse('https://sismob.trisakti.ac.id/api/get-semester'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"token": token, "IdLogin": idLogin}),
-      );
-      final json = jsonDecode(res.body);
-      if (res.statusCode == 200) {
-        setState(() {
-          _semesters = List<Map<String, dynamic>>.from(
-            json['body']?['semester'] ?? [],
-          );
-        });
+      final (token, idLogin) = await _getAuth();
+      if (token == null || idLogin == null) {
+        return;
       }
+
+      final pageData = await KhsService.fetchPageData(
+        idLogin: idLogin,
+        token: token,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _selectedSemesterId = pageData.defaultSemesterId;
+        _semesters = pageData.semesters;
+        kinerja = pageData.khs.performance;
+        khsDetailList = pageData.khs.details;
+      });
     } catch (e) {
-      debugPrint(e.toString());
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
   Future<void> fetchKhs() async {
-    if (_selectedSemesterId == null) return;
-    setState(() => isLoading = true);
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
-    final url = Uri.parse('https://sismob.trisakti.ac.id/api/get-khs');
+    if (_selectedSemesterId == null) {
+      return;
+    }
+
+    final (token, idLogin) = await _getAuth();
+    if (token == null || idLogin == null) {
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      _error = null;
+    });
 
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "IdLogin": idLogin,
-          "token": token,
-          "IdSemester": _selectedSemesterId,
-        }),
+      final result = await KhsService.getKhs(
+        idLogin: idLogin,
+        token: token,
+        idSemester: _selectedSemesterId!,
       );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          kinerja = data["body"]?["kinerja"] ?? {};
-          khsDetailList = data["body"]?["detail"] ?? [];
-          isLoading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        kinerja = result.performance;
+        khsDetailList = result.details;
+      });
     } catch (e) {
-      setState(() => isLoading = false);
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
-
-  // --- UI COMPONENTS ---
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +124,8 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                ? Center(child: Text(_error!))
                 : SingleChildScrollView(
                     child: Column(
                       children: [
@@ -129,7 +135,7 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              "Detail Mata Kuliah",
+                              'Detail Mata Kuliah',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -152,23 +158,23 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
       padding: const EdgeInsets.all(16),
       color: primaryBlue.withAlpha(13),
       child: DropdownButtonFormField<String>(
-        value: _selectedSemesterId,
+        initialValue: _selectedSemesterId,
         decoration: const InputDecoration(
-          labelText: "Semester",
+          labelText: 'Semester',
           border: OutlineInputBorder(),
           fillColor: Colors.white,
           filled: true,
         ),
         items: _semesters
             .map(
-              (sem) => DropdownMenuItem(
-                value: sem['IdSemesterMaster'].toString(),
-                child: Text(sem['SemesterMainName']),
+              (semester) => DropdownMenuItem<String>(
+                value: semester.idSemesterMaster,
+                child: Text(semester.semesterMainName),
               ),
             )
             .toList(),
-        onChanged: (v) {
-          setState(() => _selectedSemesterId = v);
+        onChanged: (value) {
+          setState(() => _selectedSemesterId = value);
           fetchKhs();
         },
       ),
@@ -186,10 +192,10 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
         mainAxisSpacing: 10,
         crossAxisSpacing: 10,
         children: [
-          _cardKinerja("IPS", kinerja['ips'] ?? "0.00", Colors.orange),
-          _cardKinerja("IPK", kinerja['ipk'] ?? "0.00", Colors.green),
-          _cardKinerja("SKS Semester", kinerja['sks_sem'] ?? "0", Colors.blue),
-          _cardKinerja("SKS Lulus", kinerja['sks_lulus'] ?? "0", Colors.purple),
+          _cardKinerja('IPS', kinerja.ips, Colors.orange),
+          _cardKinerja('IPK', kinerja.ipk, Colors.green),
+          _cardKinerja('SKS Semester', kinerja.sksSemester, Colors.blue),
+          _cardKinerja('SKS Lulus', kinerja.sksLulus, Colors.purple),
         ],
       ),
     );
@@ -237,15 +243,15 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
         return ListTile(
           onTap: () => _showDetailModal(item),
           title: Text(
-            item['namamk'],
+            item.courseName,
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
-          subtitle: Text("${item['kodemk']} • ${item['sks']} SKS"),
+          subtitle: Text('${item.courseCode} • ${item.credits} SKS'),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                item['nilai'] ?? "-",
+                item.gradeLetter,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -260,7 +266,7 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
     );
   }
 
-  void _showDetailModal(Map<String, dynamic> item) {
+  void _showDetailModal(KhsCourseDetail item) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -274,20 +280,20 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                item['namamk'],
+                item.courseName,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 4),
-              Text(item['kodemk'], style: const TextStyle(color: Colors.grey)),
+              Text(item.courseCode, style: const TextStyle(color: Colors.grey)),
               const Divider(height: 32),
-              _rowModal("Kelas", item['namakelas']),
-              _rowModal("SKS", item['sks'].toString()),
-              _rowModal("Nilai Angka", item['nilai_angka'] ?? "-"),
-              _rowModal("Nilai Huruf", item['nilai'] ?? "-"),
-              _rowModal("Status", item['pass'] ?? "N/A", isStatus: true),
+              _rowModal('Kelas', item.className),
+              _rowModal('SKS', item.credits),
+              _rowModal('Nilai Angka', item.gradePoint),
+              _rowModal('Nilai Huruf', item.gradeLetter),
+              _rowModal('Status', item.passStatus, isStatus: true),
               const SizedBox(height: 20),
             ],
           ),
@@ -307,7 +313,7 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: value == "Pass" ? Colors.green : Colors.red,
+                color: value == 'Pass' ? Colors.green : Colors.red,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(

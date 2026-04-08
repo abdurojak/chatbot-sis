@@ -1,9 +1,9 @@
-import 'dart:convert';
-import 'package:chatbot/component/authentication.dart';
 import 'package:chatbot/component/app_theme.dart';
+import 'package:chatbot/component/authentication.dart';
 import 'package:chatbot/otp_screen.dart';
+import 'package:chatbot/services/auth_service.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+
 import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -20,6 +20,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _login() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       _showMessage('Email & password wajib diisi');
@@ -29,54 +36,31 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await http.post(
-        Uri.parse('https://sismob.trisakti.ac.id/api/login'), // GANTI URL
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "user": _emailController.text,
-          "password": _passwordController.text,
-        }),
+      final result = await AuthService.login(
+        user: _emailController.text,
+        password: _passwordController.text,
       );
 
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        final String token = data['token'];
-        final String idOtp = data['id_otp'];
-        final String userId = data['userid'];
-
-        // 👇 SIMPAN KE AUTH STORAGE
-        await AuthStorage.saveAuth(
-          token: data['token'],
-          idLogin: data['IdLogin'], // ini penting buat KRS requirement
-          userId: data['userid'],
-          nim: data['nim'],
-          color: data['color'],
-          photoBase64: data['photo'], // ⚠️ base64 besar, lihat catatan di bawah
-          active: data['Active'], // pakai userid sebagai IdLogin sesuai API KRS
-        );
-        AppThemeController.instance.updatePrimaryColor(
-          data['color']?.toString(),
-        );
-
-        debugPrint('TOKEN: $token');
-        debugPrint('USERID: $userId');
-        debugPrint('idOtp: $idOtp');
+      if (result.isSuccess && result.session != null && result.idOtp != null) {
+        await AuthStorage.saveSession(result.session!);
+        AppThemeController.instance.updatePrimaryColor(result.session!.color);
 
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => OtpVerificationScreen(idOtp: idOtp),
+            builder: (_) => OtpVerificationScreen(idOtp: result.idOtp!),
           ),
         );
       } else {
-        _showMessage(data['status'] ?? 'Login gagal');
+        _showMessage(result.message);
       }
     } catch (e) {
       _showMessage('Terjadi error: $e');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -95,32 +79,25 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               children: [
                 const SizedBox(height: 60),
-
                 Image.asset(
                   'assets/images/logo_trisakti.png',
                   width: 150,
                   color: Colors.white,
                 ),
-
                 const SizedBox(height: 60),
-
                 _inputField(
                   controller: _emailController,
                   icon: Icons.person,
                   hint: 'Email / NIM',
                 ),
-
                 const SizedBox(height: 16),
-
                 _inputField(
                   controller: _passwordController,
                   icon: Icons.lock,
                   hint: 'Password',
                   isPassword: true,
                 ),
-
                 const SizedBox(height: 8),
-
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -135,9 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text('Forgot Password?'),
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -197,17 +172,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-
-// class OtpVerificationScreen extends StatelessWidget {
-//   final String idOtp;
-
-//   const OtpVerificationScreen({super.key, required this.idOtp});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text("Verifikasi OTP")),
-//       body: Center(child: Text("ID OTP: $idOtp")),
-//     );
-//   }
-// }

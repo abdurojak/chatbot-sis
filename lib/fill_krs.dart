@@ -1,11 +1,10 @@
-import 'dart:convert';
-import 'package:chatbot/component/authentication.dart';
 import 'package:chatbot/component/app_theme.dart';
-import 'package:chatbot/component/subject_model.dart';
+import 'package:chatbot/models/krs_models.dart';
 import 'package:chatbot/schedule_krs.dart';
+import 'package:chatbot/services/krs_service.dart';
+import 'package:chatbot/services/session_service.dart';
 import 'package:chatbot/submit_krs.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 class PengisianKrsPage extends StatefulWidget {
   final String idSemester;
@@ -22,8 +21,8 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
   bool _isLoading = true;
   String? _error;
 
-  List<Subject> _subjects = [];
-  List<Map<String, dynamic>> _semesters = [];
+  List<Subject> _subjects = const [];
+  List<SemesterInfo> _semesters = const [];
 
   String? _selectedSemesterId;
   String? _expandedSubjectId;
@@ -31,7 +30,7 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
   int maxSks = 0;
   int totalSks = 0;
 
-  final Map<String, List<Map<String, dynamic>>> _subjectClassesCache = {};
+  final Map<String, List<SubjectClassOption>> _subjectClassesCache = {};
   final Map<String, String> _selectedClassPerSubject = {};
 
   @override
@@ -40,184 +39,28 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
     _init();
   }
 
+  Future<(String?, String?)> _getAuth() async {
+    final session = await SessionService.loadSession();
+    return (session?.token, session?.idLogin);
+  }
+
   Future<void> _init() async {
-    await _fetchSemesters();
-    if (_selectedSemesterId != null) {
-      await _fetchSubjects();
-    }
-    await _fetchRequirement();
-    await _fetchKrs();
-  }
-
-  // ================= FETCH SEMESTER =================
-
-  Future<void> _fetchSemesters() async {
-    try {
-      final token = await AuthStorage.getToken();
-      final idLogin = await AuthStorage.getIdLogin();
-
-      final res = await http.post(
-        Uri.parse('https://sismob.trisakti.ac.id/api/get-semester'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"token": token, "IdLogin": idLogin}),
-      );
-
-      final json = jsonDecode(res.body);
-
-      debugPrint('Fetch semesters response: ${res.body}');
-
-      if (res.statusCode == 200) {
-        final List list = json['body']?['semester'] ?? [];
-
-        if (!mounted) return;
-
-        setState(() {
-          _semesters = List<Map<String, dynamic>>.from(list);
-
-          /// cari semester default dari parameter
-          final matched = _semesters.firstWhere(
-            (e) => e['IdSemesterMaster']?.toString() == widget.idSemester,
-            orElse: () => _semesters.isNotEmpty ? _semesters.first : {},
-          );
-
-          _selectedSemesterId = matched['IdSemesterMaster']?.toString();
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-      });
-    }
-  }
-
-  /// ================= GET REQUIREMENT (TEMPORARY HARDCODED) =================
-
-  Future<void> _fetchRequirement() async {
-    // Karena API 404, kita gunakan data dummy sesuai spesifikasi Anda
-    final Map<String, dynamic> mockResponse = {
-      "status": "Successful",
-      "header": {"Content-Type": "application/json"},
-      "body": {
-        "IdSemesterMain": "773",
-        "maks_sks": "24",
-        "requirements": [
-          {
-            "req_id": "req1",
-            "description": "Status Mahasiswa Aktif.",
-            "status": 1,
-            "button": [],
-          },
-          {
-            "req_id": "req2",
-            "description": "Tidak ada kewajiban keuangan.",
-            "status": 1,
-            "button": [],
-          },
-          {
-            "req_id": "req3",
-            "description": "Belum Perwalian",
-            "status": 0,
-            "button": [],
-          },
-          {
-            "req_id": "req4",
-            "description": "Persetujuan Perwalian",
-            "status": 0,
-            "button": [],
-          },
-        ],
-      },
-    };
-
-    // Simulasi delay jaringan agar CircularProgressIndicator tetap terlihat sebentar
-    await Future.delayed(const Duration(milliseconds: 500));
-
     setState(() {
-      maxSks = mockResponse["body"]["maks_sks"];
-      // Anda bisa menyimpan data requirements ke variabel state lain jika ingin menampilkannya di UI
+      _isLoading = true;
+      _error = null;
     });
-  }
-
-  /// ================= FETCH KRS =================
-
-  Future<void> _fetchKrs() async {
-    setState(() => _isLoading = true);
 
     try {
-      final token = await AuthStorage.getToken();
-      final idLogin = await AuthStorage.getIdLogin();
+      await _fetchSemesters();
+      await _fetchRequirement();
+      await _fetchKrs();
 
-      final res = await http.post(
-        Uri.parse('https://sismob.trisakti.ac.id/api/get-krs'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "IdLogin": idLogin,
-          "token": token,
-          "IdSemester": widget.idSemester,
-        }),
-      );
-
-      final json = jsonDecode(res.body);
-
-      if (res.statusCode == 200) {
-        final List list = json['body']?['kelas'] ?? [];
-
-        int sks = 0;
-
-        for (var item in list) {
-          sks += int.tryParse(item['sks'].toString()) ?? 0;
-        }
-
-        if (!mounted) return;
-
-        setState(() {
-          totalSks = sks;
-        });
+      if (_selectedSemesterId != null) {
+        await _fetchSubjects();
       }
     } catch (e) {
-      _error = e.toString();
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  // ================= FETCH SUBJECT =================
-
-  Future<void> _fetchSubjects() async {
-    if (_selectedSemesterId == null) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      final token = await AuthStorage.getToken();
-      final idLogin = await AuthStorage.getIdLogin();
-
-      final res = await http.post(
-        Uri.parse('https://sismob.trisakti.ac.id/api/subject'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "IdLogin": idLogin,
-          "token": token,
-          "IdSemester": _selectedSemesterId,
-          "level": 0,
-        }),
-      );
-
-      final json = jsonDecode(res.body);
-
-      if (res.statusCode == 200) {
-        final List list = json['body']['subjects'] ?? [];
-
-        if (!mounted) return;
-
-        setState(() {
-          _subjects = list.map((e) => Subject.fromJson(e)).toList();
-        });
-      } else {
-        _error = json['message'] ?? 'Gagal memuat mata kuliah';
-      }
-    } catch (e) {
-      _error = e.toString();
+      if (!mounted) return;
+      setState(() => _error = e.toString());
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -225,109 +68,150 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
     }
   }
 
-  // ================= FETCH KELAS =================
+  Future<void> _fetchSemesters() async {
+    final (token, idLogin) = await _getAuth();
+    if (token == null || idLogin == null) {
+      return;
+    }
 
-  Future<void> _fetchSubjectClasses(String subjectId) async {
-    if (_subjectClassesCache.containsKey(subjectId)) return;
+    final semesters = await KrsService.getSemesters(
+      idLogin: idLogin,
+      token: token,
+    );
 
-    try {
-      final token = await AuthStorage.getToken();
-      final idLogin = await AuthStorage.getIdLogin();
+    if (!mounted) return;
 
-      final res = await http.post(
-        Uri.parse('https://sismob.trisakti.ac.id/api/course-schedule'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "IdLogin": idLogin,
-          "token": token,
-          "IdSemester": _selectedSemesterId,
-          "IdSubject": subjectId,
-        }),
+    setState(() {
+      _semesters = semesters;
+
+      final matched = semesters.where(
+        (semester) => semester.idSemesterMaster == widget.idSemester,
       );
 
-      debugPrint('Fetch classes for subject $subjectId: ${res.body}');
+      _selectedSemesterId = matched.isNotEmpty
+          ? matched.first.idSemesterMaster
+          : semesters.isNotEmpty
+          ? semesters.first.idSemesterMaster
+          : null;
+    });
+  }
 
-      final json = jsonDecode(res.body);
+  Future<void> _fetchRequirement() async {
+    final (token, idLogin) = await _getAuth();
+    if (token == null || idLogin == null) {
+      return;
+    }
 
-      if (res.statusCode == 200) {
-        final List bodyList = json['body'] ?? [];
+    try {
+      final requirement = await KrsService.getRequirements(
+        idLogin: idLogin,
+        token: token,
+      );
 
-        List<Map<String, dynamic>> flattened = [];
-
-        if (bodyList.isNotEmpty && bodyList.first is Map) {
-          final Map<String, dynamic> dataMap = Map<String, dynamic>.from(
-            bodyList.first,
-          );
-
-          dataMap.forEach((key, value) {
-            if (value != null && value is Map) {
-              flattened.add(Map<String, dynamic>.from(value));
-            }
-          });
+      if (!mounted) return;
+      setState(() => maxSks = requirement.maxSks);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        if (maxSks == 0) {
+          maxSks = 24;
         }
-
-        if (!mounted) return;
-
-        setState(() {
-          _subjectClassesCache[subjectId] = flattened;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error fetch classes: $e');
+      });
     }
   }
 
-  Future<void> _onSemesterChanged(String? value) async {
-    if (value == null) return;
+  Future<void> _fetchKrs() async {
+    final (token, idLogin) = await _getAuth();
+    if (token == null || idLogin == null) {
+      return;
+    }
 
+    final semesterId = _selectedSemesterId ?? widget.idSemester;
+    final items = await KrsService.getKrs(
+      idLogin: idLogin,
+      token: token,
+      idSemester: semesterId,
+    );
+
+    if (!mounted) return;
     setState(() {
-      _selectedSemesterId = value;
-      _expandedSubjectId = null;
-      _subjects = [];
-      _subjectClassesCache.clear();
-      _selectedClassPerSubject.clear();
+      totalSks = items.fold<int>(0, (sum, item) => sum + item.creditsValue);
     });
-
-    await _fetchSubjects();
   }
 
-  // ================= REGISTER =================
+  Future<void> _fetchSubjects() async {
+    if (_selectedSemesterId == null) {
+      return;
+    }
+
+    final (token, idLogin) = await _getAuth();
+    if (token == null || idLogin == null) {
+      return;
+    }
+
+    final subjects = await KrsService.getSubjects(
+      idLogin: idLogin,
+      token: token,
+      idSemester: _selectedSemesterId!,
+    );
+
+    if (!mounted) return;
+    setState(() => _subjects = subjects);
+  }
+
+  Future<void> _fetchSubjectClasses(String subjectId) async {
+    if (_subjectClassesCache.containsKey(subjectId) ||
+        _selectedSemesterId == null) {
+      return;
+    }
+
+    final (token, idLogin) = await _getAuth();
+    if (token == null || idLogin == null) {
+      return;
+    }
+
+    final classes = await KrsService.getCourseSchedules(
+      idLogin: idLogin,
+      token: token,
+      idSemester: _selectedSemesterId!,
+      idSubject: subjectId,
+    );
+
+    if (!mounted) return;
+    setState(() => _subjectClassesCache[subjectId] = classes);
+  }
 
   Future<void> _registerKrs({required String idCourse}) async {
     try {
-      final token = await AuthStorage.getToken();
-      final idLogin = await AuthStorage.getIdLogin();
+      final (token, idLogin) = await _getAuth();
+      if (token == null || idLogin == null) {
+        return;
+      }
 
-      final res = await http.post(
-        Uri.parse('https://sismob.trisakti.ac.id/api/register'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "token": token,
-          "IdLogin": idLogin,
-          "IdCourse": idCourse,
-          "sksmaks": "24",
-        }),
+      final result = await KrsService.registerCourse(
+        idLogin: idLogin,
+        token: token,
+        idCourse: idCourse,
+        maxSks: maxSks == 0 ? 24 : maxSks,
       );
-
-      final json = jsonDecode(res.body);
 
       if (!mounted) return;
 
-      if (res.statusCode == 200 && json['body']?['status proses'] == "1") {
+      if (result.isSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ Mata kuliah berhasil disimpan'),
+            content: Text('Mata kuliah berhasil disimpan'),
             backgroundColor: Colors.green,
           ),
         );
-        _fetchKrs(); // Refresh total SKS setelah berhasil register
-        _fetchRequirement(); // Refresh requirement untuk update status jika ada
-        _fetchSemesters(); // Refresh semester untuk update status jika ada
-        _fetchSubjects(); // Refresh subjects untuk update status jika ada
+
+        await _init();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(json['message'] ?? 'Gagal menyimpan'),
+            content: Text(
+              result.message.isNotEmpty ? result.message : 'Gagal menyimpan',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -336,15 +220,17 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('❌ Error: $e')));
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
-
-  // ================= UI =================
 
   @override
   Widget build(BuildContext context) {
     final semesterLevel = _semesters.length;
+    final selectedSemester = _semesters.where(
+      (semester) => semester.idSemesterMaster == _selectedSemesterId,
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pengisian KRS'),
@@ -357,22 +243,6 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
           ? Center(child: Text(_error!))
           : Column(
               children: [
-                /// ================= DROPDOWN SEMESTER =================
-                // Padding(
-                //   padding: const EdgeInsets.all(16),
-                //   child: DropdownButtonFormField<String>(
-                //     value: _selectedSemesterId,
-                //     items: _semesters.map((sem) {
-                //       return DropdownMenuItem<String>(
-                //         value: sem['IdSemesterMaster']?.toString(),
-                //         child: Text(sem['SemesterMainName'] ?? ''),
-                //       );
-                //     }).toList(),
-                //     onChanged: _onSemesterChanged,
-                //   ),
-                // ),
-
-                /// ======= INFO CARD =======
                 Container(
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(14),
@@ -386,30 +256,29 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                   child: Column(
                     children: [
                       _infoRow(
-                        "Semester to Register",
-                        _semesters.isNotEmpty
-                            ? _semesters.first["SemesterMainName"]
-                            : "-",
+                        'Semester to Register',
+                        selectedSemester.isNotEmpty
+                            ? selectedSemester.first.semesterMainName
+                            : _semesters.isNotEmpty
+                            ? _semesters.first.semesterMainName
+                            : '-',
                       ),
-                      _infoRow("Semester Level", semesterLevel.toString()),
-                      _infoRow("Total Credit", "$totalSks/$maxSks"),
+                      _infoRow('Semester Level', semesterLevel.toString()),
+                      _infoRow('Total Credit', '$totalSks/$maxSks'),
                     ],
                   ),
                 ),
-
-                /// ================= LIST SUBJECT =================
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: _subjects.length,
-                    itemBuilder: (context, i) {
-                      final s = _subjects[i];
-                      final subjectId = s.idSubject;
+                    itemBuilder: (context, index) {
+                      final subject = _subjects[index];
+                      final subjectId = subject.idSubject;
                       final isExpanded = _expandedSubjectId == subjectId;
                       final classes = _subjectClassesCache[subjectId];
-
-                      final disabled = !s.isAvailable;
-                      final statusMsg = s.statusMessage;
+                      final disabled = !subject.isAvailable;
+                      final statusMsg = subject.statusMessage;
 
                       return Opacity(
                         opacity: disabled ? 0.5 : 1,
@@ -422,7 +291,7 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        s.namaMk,
+                                        subject.namaMk,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.blue,
@@ -437,7 +306,7 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: statusMsg == "Kelas Penuh"
+                                          color: statusMsg == 'Kelas Penuh'
                                               ? Colors.red
                                               : Colors.orange,
                                           borderRadius: BorderRadius.circular(
@@ -454,8 +323,8 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                                       ),
                                   ],
                                 ),
-                                subtitle: Text(s.kodeMk),
-                                trailing: Text("${s.sks} SKS"),
+                                subtitle: Text(subject.kodeMk),
+                                trailing: Text('${subject.sks} SKS'),
                                 onTap: disabled
                                     ? null
                                     : () async {
@@ -463,13 +332,13 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                                           setState(
                                             () => _expandedSubjectId = null,
                                           );
-                                        } else {
-                                          setState(
-                                            () =>
-                                                _expandedSubjectId = subjectId,
-                                          );
-                                          await _fetchSubjectClasses(subjectId);
+                                          return;
                                         }
+
+                                        setState(
+                                          () => _expandedSubjectId = subjectId,
+                                        );
+                                        await _fetchSubjectClasses(subjectId);
                                       },
                               ),
                               if (!disabled && isExpanded) ...[
@@ -482,84 +351,74 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                                 else
                                   Padding(
                                     padding: const EdgeInsets.all(12),
-                                    child: Column(
-                                      children: [
-                                        ...classes.map((cls) {
-                                          final int terisi =
-                                              int.tryParse(
-                                                cls['terisi'].toString(),
-                                              ) ??
-                                              0;
-                                          final int kapasitas =
-                                              int.tryParse(
-                                                cls['kapasitas'].toString(),
-                                              ) ??
-                                              0;
-
-                                          final bool full = terisi >= kapasitas;
-
-                                          final String classId = cls['IdCourse']
-                                              .toString();
-
-                                          return RadioListTile<String>(
-                                            value: classId,
-                                            groupValue:
-                                                _selectedClassPerSubject[subjectId],
-                                            onChanged: full
-                                                ? null
-                                                : (val) {
-                                                    setState(() {
-                                                      _selectedClassPerSubject[subjectId] =
-                                                          val!;
-                                                    });
-                                                  },
-                                            title: Text(
-                                              "${cls['namakelas']} ($classId)",
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
+                                    child: RadioGroup<String>(
+                                      groupValue:
+                                          _selectedClassPerSubject[subjectId],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          if (value == null) {
+                                            _selectedClassPerSubject.remove(
+                                              subjectId,
+                                            );
+                                          } else {
+                                            _selectedClassPerSubject[subjectId] =
+                                                value;
+                                          }
+                                        });
+                                      },
+                                      child: Column(
+                                        children: [
+                                          ...classes.map((item) {
+                                            final classId = item.idCourse;
+                                            return RadioListTile<String>(
+                                              value: classId,
+                                              enabled: !item.isFull,
+                                              title: Text(
+                                                '${item.className} ($classId)',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
-                                            ),
-                                            subtitle: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                ...List<Map<String, dynamic>>.from(
-                                                  cls['jadwal'] ?? [],
-                                                ).map(
-                                                  (j) => Text(
-                                                    "${j['hari']} • ${j['mulai'].substring(0, 5)} - ${j['selesai'].substring(0, 5)} | ${j['ruang']}",
+                                              subtitle: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  ...item.schedules.map(
+                                                    (schedule) => Text(
+                                                      '${schedule.day} - ${schedule.startTimeShort} - ${schedule.endTimeShort} | ${schedule.room}',
+                                                    ),
                                                   ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  "Kapasitas: $terisi/$kapasitas",
-                                                  style: TextStyle(
-                                                    color: full
-                                                        ? Colors.red
-                                                        : Colors.black,
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    'Kapasitas: ${item.enrolled}/${item.capacity}',
+                                                    style: TextStyle(
+                                                      color: item.isFull
+                                                          ? Colors.red
+                                                          : Colors.black,
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
+                                            );
+                                          }),
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: OutlinedButton(
+                                              onPressed:
+                                                  _selectedClassPerSubject[subjectId] ==
+                                                      null
+                                                  ? null
+                                                  : () async {
+                                                      await _registerKrs(
+                                                        idCourse:
+                                                            _selectedClassPerSubject[subjectId]!,
+                                                      );
+                                                    },
+                                              child: const Text('Save'),
                                             ),
-                                          );
-                                        }),
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: OutlinedButton(
-                                            onPressed:
-                                                _selectedClassPerSubject[subjectId] ==
-                                                    null
-                                                ? null
-                                                : () async {
-                                                    await _registerKrs(
-                                                      idCourse:
-                                                          _selectedClassPerSubject[subjectId]!,
-                                                    );
-                                                  },
-                                            child: const Text('Save'),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
                               ],
@@ -574,7 +433,6 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      /// ================= BUTTON LIHAT KRS =================
                       Expanded(
                         child: ElevatedButton(
                           onPressed: _isLoading
@@ -602,10 +460,7 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                           ),
                         ),
                       ),
-
                       const SizedBox(width: 12),
-
-                      /// ================= BUTTON LIHAT JADWAL =================
                       Expanded(
                         child: ElevatedButton(
                           onPressed: _isLoading
@@ -640,8 +495,6 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
             ),
     );
   }
-
-  /// ================= WIDGET =================
 
   Widget _infoRow(String title, String value) {
     return Padding(

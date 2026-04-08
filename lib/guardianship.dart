@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:chatbot/component/authentication.dart';
 import 'package:chatbot/fill_krs.dart';
+import 'package:chatbot/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -20,7 +20,7 @@ class _PerwalianPageState extends State<PerwalianPage> {
 
   DateTime? _selectedDateTime;
   String _semesterId = '773'; // default, boleh kamu ambil dari API semester
-  String _problemId = '1';
+  final String _problemId = '1';
 
   bool _loading = false;
 
@@ -33,6 +33,7 @@ class _PerwalianPageState extends State<PerwalianPage> {
     );
 
     if (date == null) return;
+    if (!mounted) return;
 
     final time = await showTimePicker(
       context: context,
@@ -70,10 +71,8 @@ class _PerwalianPageState extends State<PerwalianPage> {
       return;
     }
 
-    final token = await AuthStorage.getToken();
-    final idLogin = await AuthStorage.getIdLogin();
-
-    if (token == null || idLogin == null) return;
+    final session = await SessionService.loadSession();
+    if (session == null) return;
 
     setState(() => _loading = true);
 
@@ -82,8 +81,8 @@ class _PerwalianPageState extends State<PerwalianPage> {
         Uri.parse('https://sismob.trisakti.ac.id/api/counseling'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          "IdLogin": idLogin,
-          "token": token,
+          "IdLogin": session.idLogin,
+          "token": session.token,
           "summary": _summaryCtrl.text,
           "problem_description": _descCtrl.text,
           "IdSemester": _semesterId,
@@ -144,7 +143,7 @@ class _PerwalianPageState extends State<PerwalianPage> {
               const SizedBox(height: 16),
 
               DropdownButtonFormField<String>(
-                value: _semesterId,
+                initialValue: _semesterId,
                 decoration: _inputDecoration('Semester'),
                 items: const [
                   DropdownMenuItem(

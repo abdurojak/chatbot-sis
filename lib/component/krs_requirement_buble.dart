@@ -1,7 +1,7 @@
-import 'package:chatbot/guardianship.dart';
 import 'package:chatbot/component/app_theme.dart';
+import 'package:chatbot/guardianship.dart';
+import 'package:chatbot/models/krs_models.dart';
 import 'package:flutter/material.dart';
-import 'package:chatbot/component/chat_helper.dart';
 
 class KrsRequirementBubble extends StatelessWidget {
   final List<KrsRequirement> items;
@@ -10,7 +10,7 @@ class KrsRequirementBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final passed = items.where((e) => e.status == 1).length;
+    final passed = items.where((item) => item.status == 1).length;
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -40,13 +40,11 @@ class KrsRequirementBubble extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 12),
-
-            ...items.map((e) {
-              final done = e.status == 1;
+            ...items.map((item) {
+              final done = item.status == 1;
               final isPerwalian =
-                  e.description.trim().toLowerCase() == 'belum perwalian';
+                  item.description.trim().toLowerCase() == 'belum perwalian';
 
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -59,19 +57,15 @@ class KrsRequirementBubble extends StatelessWidget {
                       size: 20,
                     ),
                     const SizedBox(width: 10),
-
-                    // DESKRIPSI
                     Expanded(
                       child: Text(
-                        e.description,
+                        item.description,
                         style: TextStyle(
                           color: done ? Colors.black87 : Colors.red.shade700,
                           fontWeight: done ? FontWeight.w500 : FontWeight.w600,
                         ),
                       ),
                     ),
-
-                    // TOMBOL ISI (KHUSUS BELUM PERWALIAN & BELUM DONE)
                     if (!done && isPerwalian)
                       TextButton(
                         style: TextButton.styleFrom(
@@ -87,8 +81,7 @@ class KrsRequirementBubble extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  const PerwalianPage(), // ⬅️ ganti kalau beda
+                              builder: (_) => const PerwalianPage(),
                             ),
                           );
                         },
