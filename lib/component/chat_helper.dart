@@ -5,6 +5,7 @@ import 'package:chatbot/fill_krs.dart';
 import 'package:chatbot/get_invoice.dart';
 import 'package:chatbot/kpu_screen.dart';
 import 'package:chatbot/login_screen.dart';
+import 'package:chatbot/mbkm_screen.dart';
 import 'package:chatbot/result_khs.dart';
 import 'package:chatbot/result_krs.dart';
 import 'package:chatbot/services/krs_service.dart';
@@ -105,6 +106,14 @@ class BotActionHandle {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const ExamSlipPage()),
+        );
+        return true;
+
+      case 'Transaksi MB Outbound Non PT':
+        if (!context.mounted) return true;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MbkmPage()),
         );
         return true;
 

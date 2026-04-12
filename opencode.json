@@ -1,0 +1,13 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "mcp": {
+        "flutter": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@coder-lane/flutter-mcp-server"
+            ]
+        }
+    }
+}

@@ -240,15 +240,15 @@ class ChatPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
       children: [
-        _semesterTitle('Genap 2025/2026'),
+        // _semesterTitle('Genap 2025/2026'),
         const SizedBox(height: 12),
         _chatCard(context),
 
         const SizedBox(height: 24),
 
-        _semesterTitle('Gasal 2025/2026'),
-        const SizedBox(height: 12),
-        _chatCard(context),
+        // _semesterTitle('Gasal 2025/2026'),
+        // const SizedBox(height: 12),
+        // _chatCard(context),
       ],
     );
   }
