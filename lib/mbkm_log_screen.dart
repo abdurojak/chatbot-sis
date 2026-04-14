@@ -1,8 +1,16 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/models/mbkm_models.dart';
 import 'package:chatbot/services/mbkm_service.dart';
 import 'package:chatbot/services/session_service.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:printing/printing.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MbkmLogPage extends StatefulWidget {
   final String idMa;
@@ -15,6 +23,8 @@ class MbkmLogPage extends StatefulWidget {
 }
 
 class _MbkmLogPageState extends State<MbkmLogPage> {
+  final ImagePicker _imagePicker = ImagePicker();
+
   bool _isLoading = true;
   String? _error;
   List<MbkmLogEntry> _logs = const [];
@@ -254,6 +264,458 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
     );
   }
 
+  Future<void> _showEvidenceList(MbkmLogEntry entry) async {
+    if (entry.evidences.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Belum ada bukti untuk log ini')),
+      );
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Preview Bukti',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: primaryBlue,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${entry.startDate} - ${entry.endDate}',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 16),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: entry.evidences.length,
+                    separatorBuilder: (_, index) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final evidence = entry.evidences[index];
+                      return Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppThemePalette.soft(0.95),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: primaryBlue.withAlpha(24)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                evidence.isPdf
+                                    ? Icons.picture_as_pdf_rounded
+                                    : Icons.image_rounded,
+                                color: primaryBlue,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    evidence.fileName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    evidence.remark,
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(sheetContext);
+                                _previewEvidence(evidence);
+                              },
+                              child: const Text('Buka'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _previewEvidence(MbkmLogEvidence evidence) async {
+    final bytes = evidence.bytes;
+
+    if (evidence.isPdf && bytes != null) {
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              _MbkmPdfPreviewPage(title: evidence.fileName, bytes: bytes),
+        ),
+      );
+      return;
+    }
+
+    if (evidence.isImage && bytes != null) {
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              _MbkmImagePreviewPage(title: evidence.fileName, bytes: bytes),
+        ),
+      );
+      return;
+    }
+
+    if (evidence.url.isNotEmpty) {
+      final uri = Uri.tryParse(evidence.url);
+      if (uri != null) {
+        final opened = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+        if (opened || !mounted) {
+          return;
+        }
+      }
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Bukti belum memiliki data preview yang bisa dibuka'),
+      ),
+    );
+  }
+
+  Future<void> _showUploadEvidenceModal(MbkmLogEntry entry) async {
+    final remarkController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    _EvidenceUploadSelection? selectedFile;
+    bool isSubmitting = false;
+
+    Future<void> pickCamera(StateSetter setModalState) async {
+      final result = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+
+      if (result == null) return;
+      final bytes = await result.readAsBytes();
+      setModalState(() {
+        selectedFile = _EvidenceUploadSelection(
+          fileName: result.name,
+          mime: _inferImageMime(result.name),
+          base64Data: base64Encode(bytes),
+          bytes: bytes,
+          sourceLabel: 'Kamera',
+        );
+      });
+    }
+
+    Future<void> pickGallery(StateSetter setModalState) async {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+
+      final picked = result?.files.single;
+      if (picked == null) return;
+      final bytes =
+          picked.bytes ??
+          (picked.path != null ? await File(picked.path!).readAsBytes() : null);
+      if (bytes == null) return;
+
+      setModalState(() {
+        selectedFile = _EvidenceUploadSelection(
+          fileName: picked.name,
+          mime: _inferImageMime(picked.name),
+          base64Data: base64Encode(bytes),
+          bytes: bytes,
+          sourceLabel: 'Galeri',
+        );
+      });
+    }
+
+    Future<void> pickPdf(StateSetter setModalState) async {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['pdf'],
+        withData: true,
+      );
+
+      final picked = result?.files.single;
+      if (picked == null) return;
+      final bytes =
+          picked.bytes ??
+          (picked.path != null ? await File(picked.path!).readAsBytes() : null);
+      if (bytes == null) return;
+
+      setModalState(() {
+        selectedFile = _EvidenceUploadSelection(
+          fileName: picked.name,
+          mime: 'application/pdf',
+          base64Data: base64Encode(bytes),
+          bytes: bytes,
+          sourceLabel: 'PDF',
+        );
+      });
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            Future<void> submit() async {
+              if (!formKey.currentState!.validate()) {
+                return;
+              }
+              if (selectedFile == null) {
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Pilih file bukti terlebih dahulu'),
+                  ),
+                );
+                return;
+              }
+
+              final session = await SessionService.loadSession();
+              if (session == null) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(content: Text('Sesi login tidak ditemukan')),
+                );
+                return;
+              }
+
+              setModalState(() => isSubmitting = true);
+
+              try {
+                final message = await MbkmService.uploadLogEvidence(
+                  idLogin: session.idLogin,
+                  token: session.token,
+                  idLog: entry.idLog,
+                  remark: remarkController.text.trim(),
+                  mime: selectedFile!.mime,
+                  base64Data: selectedFile!.base64Data,
+                );
+
+                if (!mounted || !sheetContext.mounted) return;
+                Navigator.pop(sheetContext);
+                ScaffoldMessenger.of(
+                  this.context,
+                ).showSnackBar(SnackBar(content: Text(message)));
+                await _loadLog();
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  SnackBar(content: Text('Gagal mengunggah bukti: $e')),
+                );
+              } finally {
+                if (sheetContext.mounted) {
+                  setModalState(() => isSubmitting = false);
+                }
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+              ),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 42,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Upload Bukti',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: primaryBlue,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${entry.startDate} - ${entry.endDate}',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => pickCamera(setModalState),
+                            icon: const Icon(Icons.photo_camera_outlined),
+                            label: const Text('Kamera'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () => pickGallery(setModalState),
+                            icon: const Icon(Icons.image_outlined),
+                            label: const Text('Galeri'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () => pickPdf(setModalState),
+                            icon: const Icon(Icons.picture_as_pdf_outlined),
+                            label: const Text('PDF'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppThemePalette.soft(0.96),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: primaryBlue.withAlpha(20)),
+                        ),
+                        child: selectedFile == null
+                            ? const Text(
+                                'Pilih bukti berupa gambar atau PDF. Untuk gambar, Anda juga bisa langsung memakai kamera.',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  height: 1.4,
+                                ),
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    selectedFile!.fileName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${selectedFile!.sourceLabel} • ${selectedFile!.mime}',
+                                    style: const TextStyle(color: Colors.grey),
+                                  ),
+                                  if (selectedFile!.isImage) ...[
+                                    const SizedBox(height: 12),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.memory(
+                                        selectedFile!.bytes,
+                                        height: 120,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                      ),
+                      const SizedBox(height: 14),
+                      _buildTextField(
+                        controller: remarkController,
+                        label: 'Remark Bukti',
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: isSubmitting ? null : submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryBlue,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size.fromHeight(48),
+                          ),
+                          child: isSubmitting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Upload Bukti'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -392,6 +854,29 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
                       _infoRow('Bukti', '${item.evidenceCount} file'),
                     ],
                   ),
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: item.evidences.isEmpty
+                          ? null
+                          : () => _showEvidenceList(item),
+                      icon: const Icon(Icons.visibility_outlined, size: 18),
+                      label: const Text('Preview Bukti'),
+                    ),
+                    FilledButton.icon(
+                      onPressed: () => _showUploadEvidenceModal(item),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: primaryBlue,
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.upload_file_rounded, size: 18),
+                      label: const Text('Upload Bukti'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -534,6 +1019,72 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       onTap: () => _pickDate(context, controller),
+    );
+  }
+
+  String _inferImageMime(String fileName) {
+    final lower = fileName.toLowerCase();
+    if (lower.endsWith('.png')) {
+      return 'image/png';
+    }
+    if (lower.endsWith('.webp')) {
+      return 'image/webp';
+    }
+    return 'image/jpeg';
+  }
+}
+
+class _EvidenceUploadSelection {
+  final String fileName;
+  final String mime;
+  final String base64Data;
+  final Uint8List bytes;
+  final String sourceLabel;
+
+  const _EvidenceUploadSelection({
+    required this.fileName,
+    required this.mime,
+    required this.base64Data,
+    required this.bytes,
+    required this.sourceLabel,
+  });
+
+  bool get isImage => mime.startsWith('image/');
+}
+
+class _MbkmPdfPreviewPage extends StatelessWidget {
+  final String title;
+  final Uint8List bytes;
+
+  const _MbkmPdfPreviewPage({required this.title, required this.bytes});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: PdfPreview(build: (_) async => bytes),
+    );
+  }
+}
+
+class _MbkmImagePreviewPage extends StatelessWidget {
+  final String title;
+  final Uint8List bytes;
+
+  const _MbkmImagePreviewPage({required this.title, required this.bytes});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      backgroundColor: Colors.black,
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 0.8,
+          maxScale: 4,
+          child: Image.memory(bytes),
+        ),
+      ),
     );
   }
 }

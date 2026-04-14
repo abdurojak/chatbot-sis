@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 class MbkmBiodata {
   final String name;
   final String nim;
@@ -243,6 +246,179 @@ class MbkmApplyFormData {
   });
 }
 
+class MbkmExchangeCourseData {
+  final List<MbkmExchangeCourse> internalCourses;
+  final List<MbkmExchangeCourse> externalCourses;
+  final List<MbkmExchangeAppliedCourse> appliedCourses;
+
+  const MbkmExchangeCourseData({
+    required this.internalCourses,
+    required this.externalCourses,
+    required this.appliedCourses,
+  });
+
+  factory MbkmExchangeCourseData.fromJson(Map<String, dynamic> json) {
+    final body = json['body'] as Map<String, dynamic>? ?? const {};
+    final data = body['data'] as Map<String, dynamic>? ?? const {};
+
+    return MbkmExchangeCourseData(
+      internalCourses: ((data['internal'] as List?) ?? const [])
+          .whereType<Map>()
+          .map(
+            (item) =>
+                MbkmExchangeCourse.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+      externalCourses: ((data['external'] as List?) ?? const [])
+          .whereType<Map>()
+          .map(
+            (item) =>
+                MbkmExchangeCourse.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+      appliedCourses: ((data['subjectapplied'] as List?) ?? const [])
+          .whereType<Map>()
+          .map(
+            (item) => MbkmExchangeAppliedCourse.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class MbkmExchangeCourse {
+  final String idCourseTaggingGroup;
+  final String idSubject;
+  final String groupCode;
+  final String lecturerId;
+  final String day;
+  final String startTime;
+  final String endTime;
+  final String programName;
+  final String subjectCode;
+  final String subjectName;
+  final String creditHours;
+  final int appliedCount;
+  final String approval;
+  final String isIn;
+  final String lecturer;
+
+  const MbkmExchangeCourse({
+    required this.idCourseTaggingGroup,
+    required this.idSubject,
+    required this.groupCode,
+    required this.lecturerId,
+    required this.day,
+    required this.startTime,
+    required this.endTime,
+    required this.programName,
+    required this.subjectCode,
+    required this.subjectName,
+    required this.creditHours,
+    required this.appliedCount,
+    required this.approval,
+    required this.isIn,
+    required this.lecturer,
+  });
+
+  factory MbkmExchangeCourse.fromJson(Map<String, dynamic> json) {
+    return MbkmExchangeCourse(
+      idCourseTaggingGroup: _readString(json['IdCourseTaggingGroup']),
+      idSubject: _readString(json['IdSubject']),
+      groupCode: _readString(json['GroupCode'], fallback: '-'),
+      lecturerId: _readString(json['IdLecturer']),
+      day: _readString(json['sc_day'], fallback: '-'),
+      startTime: _normalizeTime(
+        _readString(json['sc_start_time'], fallback: '-'),
+      ),
+      endTime: _normalizeTime(_readString(json['sc_end_time'], fallback: '-')),
+      programName: _readString(json['programname'], fallback: '-'),
+      subjectCode: _readString(
+        json['SubCode'] ?? json['subject_code'],
+        fallback: '-',
+      ),
+      subjectName: _readString(
+        json['SubjectName'] ?? json['subject_name'],
+        fallback: '-',
+      ),
+      creditHours: _readString(json['CreditHours'], fallback: '0'),
+      appliedCount: int.tryParse(_readString(json['jml'], fallback: '0')) ?? 0,
+      approval: _readString(json['approval'], fallback: '0'),
+      isIn: _readString(json['isin'], fallback: '0'),
+      lecturer: _readString(json['lecturer'], fallback: '-'),
+    );
+  }
+
+  String get scheduleLabel => '$day • $startTime - $endTime';
+}
+
+class MbkmExchangeAppliedCourse extends MbkmExchangeCourse {
+  final String idMa;
+  final String approvalStatus;
+  final String status;
+  final String remark;
+  final String semesterId;
+
+  const MbkmExchangeAppliedCourse({
+    required super.idCourseTaggingGroup,
+    required super.idSubject,
+    required super.groupCode,
+    required super.lecturerId,
+    required super.day,
+    required super.startTime,
+    required super.endTime,
+    required super.programName,
+    required super.subjectCode,
+    required super.subjectName,
+    required super.creditHours,
+    required super.appliedCount,
+    required super.approval,
+    required super.isIn,
+    required super.lecturer,
+    required this.idMa,
+    required this.approvalStatus,
+    required this.status,
+    required this.remark,
+    required this.semesterId,
+  });
+
+  factory MbkmExchangeAppliedCourse.fromJson(Map<String, dynamic> json) {
+    final base = MbkmExchangeCourse.fromJson(json);
+    return MbkmExchangeAppliedCourse(
+      idCourseTaggingGroup: base.idCourseTaggingGroup,
+      idSubject: base.idSubject,
+      groupCode: base.groupCode,
+      lecturerId: base.lecturerId,
+      day: base.day,
+      startTime: base.startTime,
+      endTime: base.endTime,
+      programName: base.programName,
+      subjectCode: base.subjectCode,
+      subjectName: base.subjectName,
+      creditHours: base.creditHours,
+      appliedCount: base.appliedCount,
+      approval: base.approval,
+      isIn: base.isIn,
+      lecturer: base.lecturer,
+      idMa: _readString(json['id_ma']),
+      approvalStatus: _readString(json['approval_status'], fallback: '-'),
+      status: _readString(json['status'], fallback: '-'),
+      remark: _readString(json['remark'], fallback: '-'),
+      semesterId: _readString(json['IdSemester'] ?? json['idsemester']),
+    );
+  }
+
+  bool get canDelete {
+    final approvalText = approvalStatus.toLowerCase();
+    final statusText = status.toLowerCase();
+    return approvalText.contains('not approved yet') ||
+        approvalText == '0' ||
+        statusText.contains('not approved yet');
+  }
+}
+
 class MbkmLogEntry {
   final String idLog;
   final String startDate;
@@ -254,7 +430,7 @@ class MbkmLogEntry {
   final String entryDate;
   final String approvalStatus;
   final String idMa;
-  final int evidenceCount;
+  final List<MbkmLogEvidence> evidences;
 
   const MbkmLogEntry({
     required this.idLog,
@@ -267,11 +443,11 @@ class MbkmLogEntry {
     required this.entryDate,
     required this.approvalStatus,
     required this.idMa,
-    required this.evidenceCount,
+    required this.evidences,
   });
 
   factory MbkmLogEntry.fromJson(Map<String, dynamic> json) {
-    final evidences = json['bukti'] as List? ?? const [];
+    final rawEvidences = json['bukti'] as List? ?? const [];
 
     return MbkmLogEntry(
       idLog: _readString(json['id_log']),
@@ -284,8 +460,77 @@ class MbkmLogEntry {
       entryDate: _readString(json['dt_entry'], fallback: '-'),
       approvalStatus: _readString(json['approval_status'], fallback: '-'),
       idMa: _readString(json['id_ma']),
-      evidenceCount: evidences.length,
+      evidences: rawEvidences
+          .whereType<Map>()
+          .map(
+            (item) => MbkmLogEvidence.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
     );
+  }
+
+  int get evidenceCount => evidences.length;
+}
+
+class MbkmLogEvidence {
+  final String mime;
+  final String data;
+  final String remark;
+  final String fileName;
+  final String url;
+
+  const MbkmLogEvidence({
+    required this.mime,
+    required this.data,
+    required this.remark,
+    required this.fileName,
+    required this.url,
+  });
+
+  factory MbkmLogEvidence.fromJson(Map<String, dynamic> json) {
+    return MbkmLogEvidence(
+      mime: _readString(json['mime'] ?? json['mime_type'] ?? json['file_mime']),
+      data: _readString(
+        json['data'] ?? json['base64'] ?? json['file_data'] ?? json['content'],
+      ),
+      remark: _readString(
+        json['remark'] ?? json['keterangan'] ?? json['description'],
+        fallback: '-',
+      ),
+      fileName: _readString(
+        json['file_name'] ?? json['filename'] ?? json['name'],
+        fallback: 'Bukti',
+      ),
+      url: _readString(json['url'] ?? json['file_url'] ?? json['path']),
+    );
+  }
+
+  bool get isPdf =>
+      mime.toLowerCase().contains('pdf') ||
+      fileName.toLowerCase().endsWith('.pdf');
+
+  bool get isImage =>
+      mime.toLowerCase().startsWith('image/') ||
+      fileName.toLowerCase().endsWith('.png') ||
+      fileName.toLowerCase().endsWith('.jpg') ||
+      fileName.toLowerCase().endsWith('.jpeg');
+
+  bool get hasPreviewData => bytes != null || url.isNotEmpty;
+
+  Uint8List? get bytes {
+    if (data.isEmpty) {
+      return null;
+    }
+
+    final sanitized = data.contains(',')
+        ? data.substring(data.indexOf(',') + 1)
+        : data;
+
+    try {
+      return base64Decode(sanitized);
+    } catch (_) {
+      return null;
+    }
   }
 }
 
@@ -295,4 +540,18 @@ String _readString(dynamic value, {String fallback = ''}) {
     return fallback;
   }
   return text;
+}
+
+String _normalizeTime(String value) {
+  if (value == '-' || value.isEmpty) {
+    return value;
+  }
+
+  final compact = value.replaceAll(' ', '');
+  final match = RegExp(r'^(\d{2}):(\d{2})(?::\d{2})?$').firstMatch(compact);
+  if (match == null) {
+    return compact;
+  }
+
+  return '${match.group(1)}:${match.group(2)}';
 }

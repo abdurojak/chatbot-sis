@@ -7,19 +7,22 @@ import 'package:chatbot/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class MbkmPage extends StatefulWidget {
-  const MbkmPage({super.key});
+class MbkmOutboundPage extends StatefulWidget {
+  const MbkmOutboundPage({super.key});
 
   @override
-  State<MbkmPage> createState() => _MbkmPageState();
+  State<MbkmOutboundPage> createState() => _MbkmOutboundPageState();
 }
 
-class _MbkmPageState extends State<MbkmPage> {
+class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
   bool _isLoading = true;
   String? _error;
   MbkmResponseData? _data;
+  final Set<String> _expandedApplicationIds = <String>{};
 
   Color get primaryBlue => AppThemePalette.primary;
+  Color get subtleText => Colors.grey.shade700;
+  Color get mutedText => Colors.grey.shade800;
 
   @override
   void initState() {
@@ -259,6 +262,16 @@ class _MbkmPageState extends State<MbkmPage> {
     );
   }
 
+  void _toggleApplication(String id) {
+    setState(() {
+      if (_expandedApplicationIds.contains(id)) {
+        _expandedApplicationIds.remove(id);
+      } else {
+        _expandedApplicationIds.add(id);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final applications = _data?.applications ?? const <MbkmApplication>[];
@@ -266,7 +279,7 @@ class _MbkmPageState extends State<MbkmPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transaksi MBKM'),
+        title: const Text('MBKM Outbound'),
         backgroundColor: primaryBlue,
         foregroundColor: Colors.white,
       ),
@@ -313,16 +326,23 @@ class _MbkmPageState extends State<MbkmPage> {
                     'Daftar Pengajuan',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
                       color: primaryBlue,
                     ),
                   ),
                   const SizedBox(height: 12),
                   if (applications.isEmpty)
-                    const Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(20),
-                        child: Text('Belum ada data MBKM'),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: primaryBlue.withAlpha(18)),
+                      ),
+                      child: Text(
+                        'Belum ada data MBKM',
+                        style: TextStyle(color: subtleText),
                       ),
                     )
                   else
@@ -358,9 +378,10 @@ class _MbkmPageState extends State<MbkmPage> {
   }
 
   Widget _buildApplicationCard(MbkmApplication item) {
+    final isExpanded = _expandedApplicationIds.contains(item.idApplication);
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      clipBehavior: Clip.antiAlias,
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -376,158 +397,235 @@ class _MbkmPageState extends State<MbkmPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [primaryBlue.withAlpha(235), AppThemePalette.dark(0.1)],
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: () => _toggleApplication(item.idApplication),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      primaryBlue.withAlpha(242),
+                      AppThemePalette.dark(0.08),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.vertical(
+                    top: const Radius.circular(24),
+                    bottom: Radius.circular(isExpanded ? 0 : 24),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _chip(item.activityType, filled: true),
-                    _chip(item.scaleName, filled: true),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _chip(item.activityType, filled: true),
+                              _chip(item.scaleName, filled: true),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            item.title,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              height: 1.25,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            item.companyName,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Mentor',
+                                style: TextStyle(
+                                  color: Colors.white.withAlpha(205),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  item.internalMentorName,
+                                  style: TextStyle(
+                                    color: Colors.white.withAlpha(235),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(24),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: AnimatedRotation(
+                        turns: isExpanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 220),
+                        child: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                Text(
-                  item.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  item.companyName,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-            decoration: BoxDecoration(
-              color: AppThemePalette.soft(0.95),
-              border: Border(
-                bottom: BorderSide(color: primaryBlue.withAlpha(25)),
               ),
             ),
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _statCard('Semester', item.semesterName),
-                _statCard('Periode', '${item.startDate} - ${item.endDate}'),
-              ],
-            ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-            child: Column(
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFD),
-                    borderRadius: BorderRadius.circular(16),
+                    color: AppThemePalette.soft(0.95),
+                    border: Border(
+                      bottom: BorderSide(color: primaryBlue.withAlpha(25)),
+                    ),
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _infoRow('Mentor Internal', item.internalMentorName),
-                      _infoRow('Seleksi', item.selectionDate),
-                      _infoRow('Hasil Seleksi', item.resultDate),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _compactStatCard(
+                              'Semester',
+                              item.semesterName,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _compactStatCard(
+                              'Periode',
+                              '${item.startDate} - ${item.endDate}',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _compactStatCard(
+                              'Seleksi',
+                              item.selectionDate,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _compactStatCard('Hasil', item.resultDate),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Deskripsi Program',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: primaryBlue,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  item.description,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    height: 1.5,
-                    color: Colors.black87,
-                  ),
-                ),
-                if (item.competencies.isNotEmpty) ...[
-                  const SizedBox(height: 20),
-                  Row(
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.school, size: 18, color: primaryBlue),
-                      const SizedBox(width: 8),
                       Text(
-                        'Kompetensi',
+                        'Deskripsi Program',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: primaryBlue,
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      Text(
+                        item.description,
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.5,
+                          color: mutedText,
+                        ),
+                      ),
+                      if (item.competencies.isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        _buildCompetencySection(item.competencies),
+                      ],
+                      const SizedBox(height: 10),
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => _showAddCompetencyModal(item),
+                            icon: const Icon(Icons.add, size: 16),
+                            label: const Text('Tambah Kompetensi'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => MbkmLogPage(
+                                    idMa: item.idApplication,
+                                    title: item.title,
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.history, size: 16),
+                            label: const Text('Lihat Log'),
+                          ),
+                          if (item.hasMoreInfo)
+                            TextButton.icon(
+                              onPressed: () => _openLink(item.moreInfoUrl),
+                              icon: const Icon(Icons.open_in_new, size: 16),
+                              label: const Text('Buka Link'),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  ...item.competencies.map(_buildCompetencyCard),
-                ],
-                const SizedBox(height: 10),
-                Wrap(
-                  alignment: WrapAlignment.end,
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () => _showAddCompetencyModal(item),
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text('Tambah Kompetensi'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => MbkmLogPage(
-                              idMa: item.idApplication,
-                              title: item.title,
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.history, size: 16),
-                      label: const Text('Lihat Log'),
-                    ),
-                    if (item.hasMoreInfo)
-                      TextButton.icon(
-                        onPressed: () => _openLink(item.moreInfoUrl),
-                        icon: const Icon(Icons.open_in_new, size: 16),
-                        label: const Text('Buka Info'),
-                      ),
-                  ],
                 ),
               ],
             ),
+            crossFadeState: isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 220),
+            sizeCurve: Curves.easeInOut,
           ),
         ],
       ),
@@ -548,7 +646,7 @@ class _MbkmPageState extends State<MbkmPage> {
         children: [
           Text(
             item.competency,
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: TextStyle(fontWeight: FontWeight.w700, color: mutedText),
           ),
           const SizedBox(height: 8),
           _infoRow('Sumber Belajar', item.learningSource),
@@ -556,6 +654,43 @@ class _MbkmPageState extends State<MbkmPage> {
           _infoRow('Pengalaman Belajar', item.learningExperience),
           _infoRow('Durasi', '${item.durationInHour} jam'),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCompetencySection(List<MbkmCompetency> competencies) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: primaryBlue.withAlpha(22)),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+          childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+          iconColor: primaryBlue,
+          collapsedIconColor: primaryBlue,
+          title: Row(
+            children: [
+              Icon(Icons.school, size: 18, color: primaryBlue),
+              const SizedBox(width: 8),
+              Text(
+                'Kompetensi',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: primaryBlue,
+                ),
+              ),
+            ],
+          ),
+          subtitle: Text(
+            '${competencies.length} kompetensi tersedia',
+            style: TextStyle(color: subtleText),
+          ),
+          children: competencies.map(_buildCompetencyCard).toList(),
+        ),
       ),
     );
   }
@@ -581,23 +716,36 @@ class _MbkmPageState extends State<MbkmPage> {
     );
   }
 
-  Widget _statCard(String label, String value) {
+  Widget _compactStatCard(String label, String value) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 140, maxWidth: 260),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: primaryBlue.withAlpha(28)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: primaryBlue.withAlpha(24)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+          Text(
+            label,
+            style: TextStyle(
+              color: subtleText,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              height: 1.25,
+              color: mutedText,
+            ),
           ),
         ],
       ),
@@ -612,12 +760,12 @@ class _MbkmPageState extends State<MbkmPage> {
         children: [
           SizedBox(
             width: 116,
-            child: Text(label, style: const TextStyle(color: Colors.grey)),
+            child: Text(label, style: TextStyle(color: subtleText)),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: TextStyle(fontWeight: FontWeight.w500, color: mutedText),
             ),
           ),
         ],

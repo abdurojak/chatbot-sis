@@ -5,7 +5,7 @@ import 'package:chatbot/fill_krs.dart';
 import 'package:chatbot/get_invoice.dart';
 import 'package:chatbot/kpu_screen.dart';
 import 'package:chatbot/login_screen.dart';
-import 'package:chatbot/mbkm_screen.dart';
+import 'package:chatbot/mbkm_menu_screen.dart';
 import 'package:chatbot/result_khs.dart';
 import 'package:chatbot/result_krs.dart';
 import 'package:chatbot/services/krs_service.dart';
@@ -113,7 +113,7 @@ class BotActionHandle {
         if (!context.mounted) return true;
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const MbkmPage()),
+          MaterialPageRoute(builder: (_) => const MbkmMenuPage()),
         );
         return true;
 
@@ -125,7 +125,7 @@ class BotActionHandle {
         );
         return true;
 
-      case 'Hasil Nilai':
+      case 'Hasil MB Outbound Non PT':
         if (token == null || idLogin == null) {
           if (!context.mounted) return true;
           Navigator.push(

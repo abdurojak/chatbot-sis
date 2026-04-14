@@ -127,6 +127,136 @@ class MbkmService {
     return message;
   }
 
+  static Future<String> uploadLogEvidence({
+    required String idLogin,
+    required String token,
+    required String idLog,
+    required String remark,
+    required String mime,
+    required String base64Data,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/mbkm-log-evidence'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'IdLogin': idLogin,
+        'token': token,
+        'id_log': idLog,
+        'remark': remark,
+        'file': {'mime': mime, 'data': base64Data},
+      }),
+    );
+
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final message =
+        json['message']?.toString() ??
+        json['status']?.toString() ??
+        'Bukti berhasil diunggah';
+
+    if (response.statusCode != 200) {
+      throw Exception(message);
+    }
+
+    return message;
+  }
+
+  static Future<MbkmExchangeCourseData> getExchangeCourses({
+    required String idLogin,
+    required String token,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/mbkm-get-courses'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'IdLogin': idLogin, 'token': token}),
+    );
+
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode != 200) {
+      throw Exception(
+        json['message']?.toString() ??
+            json['status']?.toString() ??
+            'Gagal mengambil data pertukaran mahasiswa',
+      );
+    }
+
+    return MbkmExchangeCourseData.fromJson(json);
+  }
+
+  static Future<String> getActiveSemesterId({
+    required String idLogin,
+    required String token,
+  }) async {
+    final requirement = await KrsService.getRequirements(
+      idLogin: idLogin,
+      token: token,
+    );
+    return requirement.idSemester;
+  }
+
+  static Future<String> saveExchangeCourse({
+    required String idLogin,
+    required String token,
+    required String outbound,
+    required String idSemesterMain,
+    required List<String> kelas,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/mbkm-save-courses'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'IdLogin': idLogin,
+        'token': token,
+        'outbound': outbound,
+        'IdSemesterMain': idSemesterMain,
+        'kelas': kelas,
+      }),
+    );
+
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final message =
+        json['message']?.toString() ??
+        json['status']?.toString() ??
+        'Mata kuliah berhasil diajukan';
+
+    if (response.statusCode != 200) {
+      throw Exception(message);
+    }
+
+    return message;
+  }
+
+  static Future<String> deleteExchangeCourse({
+    required String idLogin,
+    required String token,
+    required String outbound,
+    required String idSemesterMain,
+    required List<String> kelas,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/mbkm-delete-courses'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'IdLogin': idLogin,
+        'token': token,
+        'outbound': outbound,
+        'IdSemesterMain': idSemesterMain,
+        'kelas': kelas,
+      }),
+    );
+
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final message =
+        json['message']?.toString() ??
+        json['status']?.toString() ??
+        'Mata kuliah berhasil dihapus';
+
+    if (response.statusCode != 200) {
+      throw Exception(message);
+    }
+
+    return message;
+  }
+
   static Future<List<MbkmPartnerOption>> getPartners({
     required String idLogin,
     required String token,

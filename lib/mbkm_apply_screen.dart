@@ -15,6 +15,7 @@ class _MbkmApplyPageState extends State<MbkmApplyPage> {
   static const String _defaultCompanyType = '2019';
 
   final _formKey = GlobalKey<FormState>();
+  final _partnerSearchController = TextEditingController();
   final _titleController = TextEditingController();
   final _companyController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -47,6 +48,7 @@ class _MbkmApplyPageState extends State<MbkmApplyPage> {
 
   @override
   void dispose() {
+    _partnerSearchController.dispose();
     _titleController.dispose();
     _companyController.dispose();
     _descriptionController.dispose();
@@ -134,11 +136,13 @@ class _MbkmApplyPageState extends State<MbkmApplyPage> {
       setState(() {
         _selectedPartner = '';
         _selectedCompanyType = _defaultCompanyType;
+        _partnerSearchController.clear();
       });
       return;
     }
 
     setState(() {
+      _partnerSearchController.text = partner.label;
       _selectedPartner = partner.id;
       _selectedCompanyType = partner.companyType.isNotEmpty
           ? partner.companyType
@@ -306,16 +310,7 @@ class _MbkmApplyPageState extends State<MbkmApplyPage> {
                   ),
                   const SizedBox(height: 12),
                   if (_partners.isNotEmpty)
-                    _buildDropdownField<MbkmPartnerOption>(
-                      label: 'Partner',
-                      value: _selectedPartnerOption,
-                      items: _partners,
-                      itemLabel: (item) => item.label,
-                      onChanged: (value) {
-                        _applyPartnerPrefill(value);
-                      },
-                      isRequired: false,
-                    )
+                    _buildSearchablePartnerField()
                   else
                     _buildInfoField(
                       label: 'Partner',
@@ -412,6 +407,51 @@ class _MbkmApplyPageState extends State<MbkmApplyPage> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildSearchablePartnerField() {
+    return DropdownMenu<MbkmPartnerOption>(
+      controller: _partnerSearchController,
+      width: double.infinity,
+      enableSearch: true,
+      enableFilter: true,
+      requestFocusOnTap: true,
+      menuHeight: 320,
+      expandedInsets: EdgeInsets.zero,
+      initialSelection: _selectedPartnerOption,
+      label: const Text('Partner'),
+      hintText: 'Cari atau pilih partner',
+      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+      inputDecorationTheme: InputDecorationTheme(
+        alignLabelWithHint: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: primaryBlue, width: 1.4),
+        ),
+      ),
+      dropdownMenuEntries: _partners
+          .map(
+            (item) => DropdownMenuEntry<MbkmPartnerOption>(
+              value: item,
+              label: item.label,
+              style: ButtonStyle(
+                textStyle: WidgetStateProperty.all(
+                  const TextStyle(fontSize: 14),
+                ),
+              ),
+            ),
+          )
+          .toList(),
+      onSelected: _applyPartnerPrefill,
     );
   }
 
