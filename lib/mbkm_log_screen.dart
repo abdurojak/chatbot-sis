@@ -24,6 +24,7 @@ class MbkmLogPage extends StatefulWidget {
 
 class _MbkmLogPageState extends State<MbkmLogPage> {
   final ImagePicker _imagePicker = ImagePicker();
+  final Set<String> _expandedLogIds = <String>{};
 
   bool _isLoading = true;
   String? _error;
@@ -262,6 +263,16 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
         );
       },
     );
+  }
+
+  void _toggleLog(String idLog) {
+    setState(() {
+      if (_expandedLogIds.contains(idLog)) {
+        _expandedLogIds.remove(idLog);
+      } else {
+        _expandedLogIds.add(idLog);
+      }
+    });
   }
 
   Future<void> _showEvidenceList(MbkmLogEntry entry) async {
@@ -758,6 +769,8 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
   }
 
   Widget _buildLogCard(MbkmLogEntry item) {
+    final isExpanded = _expandedLogIds.contains(item.idLog);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -775,111 +788,162 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            decoration: BoxDecoration(
-              color: AppThemePalette.soft(0.95),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(22),
-              ),
-              border: Border(
-                bottom: BorderSide(color: primaryBlue.withAlpha(20)),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Periode Log',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${item.startDate} - ${item.endDate}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          color: primaryBlue,
-                          fontSize: 15,
-                        ),
-                      ),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(22),
+              onTap: () => _toggleLog(item.idLog),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      primaryBlue.withAlpha(235),
+                      AppThemePalette.dark(0.08),
                     ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: () => _showLogForm(entry: item),
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: const Text('Ubah'),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSectionLabel('Aktivitas'),
-                const SizedBox(height: 6),
-                Text(
-                  item.activity,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    height: 1.4,
+                  borderRadius: BorderRadius.vertical(
+                    top: const Radius.circular(22),
+                    bottom: Radius.circular(isExpanded ? 0 : 22),
                   ),
                 ),
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFD),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      _infoRow('Evaluasi', item.evaluation),
-                      _infoRow('Tindakan', item.action),
-                      _infoRow('Remark Mentor', item.mentorRemark),
-                      _infoRow('Tanggal Input', item.entryDate),
-                      _infoRow('Approval', item.approvalStatus),
-                      _infoRow('Bukti', '${item.evidenceCount} file'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    OutlinedButton.icon(
-                      onPressed: item.evidences.isEmpty
-                          ? null
-                          : () => _showEvidenceList(item),
-                      icon: const Icon(Icons.visibility_outlined, size: 18),
-                      label: const Text('Preview Bukti'),
-                    ),
-                    FilledButton.icon(
-                      onPressed: () => _showUploadEvidenceModal(item),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: primaryBlue,
-                        foregroundColor: Colors.white,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Periode Log',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.3,
+                              color: Colors.white.withAlpha(205),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${item.startDate} - ${item.endDate}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            item.activity,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withAlpha(235),
+                              fontWeight: FontWeight.w600,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
                       ),
-                      icon: const Icon(Icons.upload_file_rounded, size: 18),
-                      label: const Text('Upload Bukti'),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      children: [
+                        OutlinedButton(
+                          onPressed: () => _showLogForm(entry: item),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.white24),
+                            backgroundColor: Colors.white.withAlpha(18),
+                            minimumSize: const Size(42, 38),
+                            padding: EdgeInsets.zero,
+                          ),
+                          child: const Icon(Icons.edit, size: 18),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(18),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: AnimatedRotation(
+                            turns: isExpanded ? 0.5 : 0,
+                            duration: const Duration(milliseconds: 220),
+                            child: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFD),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        _infoRow('Evaluasi', item.evaluation),
+                        _infoRow('Tindakan', item.action),
+                        _infoRow('Remark Mentor', item.mentorRemark),
+                        _infoRow('Tanggal Input', item.entryDate),
+                        _infoRow('Approval', item.approvalStatus),
+                        _infoRow('Bukti', '${item.evidenceCount} file'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: item.evidences.isEmpty
+                            ? null
+                            : () => _showEvidenceList(item),
+                        icon: const Icon(Icons.visibility_outlined, size: 18),
+                        label: const Text('Preview Bukti'),
+                      ),
+                      FilledButton.icon(
+                        onPressed: () => _showUploadEvidenceModal(item),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: primaryBlue,
+                          foregroundColor: Colors.white,
+                        ),
+                        icon: const Icon(Icons.upload_file_rounded, size: 18),
+                        label: const Text('Upload Bukti'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            crossFadeState: isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 220),
+            sizeCurve: Curves.easeInOut,
           ),
         ],
       ),
@@ -941,18 +1005,6 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
             style: const TextStyle(color: Colors.white70, height: 1.4),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSectionLabel(String text) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.3,
-        color: Colors.grey.shade600,
       ),
     );
   }

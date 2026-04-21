@@ -18,6 +18,9 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
   String? _error;
   String? _idSemesterMain;
   MbkmExchangeCourseData? _data;
+  bool _showApplied = false;
+  bool _showInternal = false;
+  bool _showExternal = false;
 
   Color get primaryBlue => AppThemePalette.primary;
 
@@ -271,10 +274,13 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
                   const SizedBox(height: 18),
                   _buildSearchField(),
                   const SizedBox(height: 18),
-                  _buildSection(
+                  _buildCollapsibleSection(
                     title: 'Mata Kuliah Sudah Diajukan',
                     subtitle:
                         'Daftar mata kuliah yang sudah masuk proses pengajuan.',
+                    isExpanded: _showApplied,
+                    onToggle: () =>
+                        setState(() => _showApplied = !_showApplied),
                     child: filteredApplied.isEmpty
                         ? _buildEmptyState(
                             query.isEmpty
@@ -290,10 +296,13 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
                           ),
                   ),
                   const SizedBox(height: 18),
-                  _buildSection(
+                  _buildCollapsibleSection(
                     title: 'Mata Kuliah Internal',
                     subtitle:
                         'Pilihan mata kuliah internal yang tersedia untuk pertukaran.',
+                    isExpanded: _showInternal,
+                    onToggle: () =>
+                        setState(() => _showInternal = !_showInternal),
                     child: filteredInternal.isEmpty
                         ? _buildEmptyState(
                             query.isEmpty
@@ -307,10 +316,13 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
                           ),
                   ),
                   const SizedBox(height: 18),
-                  _buildSection(
+                  _buildCollapsibleSection(
                     title: 'Mata Kuliah External',
                     subtitle:
                         'Daftar mata kuliah external akan muncul di bagian ini.',
+                    isExpanded: _showExternal,
+                    onToggle: () =>
+                        setState(() => _showExternal = !_showExternal),
                     child: filteredExternal.isEmpty
                         ? _buildEmptyState(
                             query.isEmpty
@@ -421,27 +433,85 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
     );
   }
 
-  Widget _buildSection({
+  Widget _buildCollapsibleSection({
     required String title,
     required String subtitle,
+    required bool isExpanded,
+    required VoidCallback onToggle,
     required Widget child,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: primaryBlue,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: primaryBlue.withAlpha(18)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F000000),
+            blurRadius: 10,
+            offset: Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(subtitle, style: const TextStyle(color: Colors.grey, height: 1.4)),
-        const SizedBox(height: 12),
-        child,
-      ],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: onToggle,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: primaryBlue,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 220),
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: primaryBlue,
+                        size: 28,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (isExpanded) ...[
+            Divider(height: 1, color: primaryBlue.withAlpha(15)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: child,
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -500,10 +570,17 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _infoRow('Jadwal', course.scheduleLabel),
-                _infoRow('Dosen', course.lecturer),
-                _infoRow('Peminat', course.appliedCount.toString()),
+                _plainDetail(course.scheduleLabel),
+                Divider(height: 18, color: primaryBlue.withAlpha(18)),
+                const SizedBox(height: 2),
+                const SizedBox(height: 8),
+                _plainDetail(course.lecturer),
+                Divider(height: 18, color: primaryBlue.withAlpha(18)),
+                const SizedBox(height: 2),
+                const SizedBox(height: 8),
+                _plainDetail('${course.appliedCount} peminat'),
               ],
             ),
           ),
@@ -609,11 +686,21 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _infoRow('Jadwal', course.scheduleLabel),
-                _infoRow('Dosen', course.lecturer),
-                _infoRow('Approval', course.approvalStatus),
-                _infoRow('Remark', course.remark),
+                _plainDetail(course.scheduleLabel),
+                Divider(height: 18, color: primaryBlue.withAlpha(18)),
+                const SizedBox(height: 2),
+                const SizedBox(height: 8),
+                _plainDetail(course.lecturer),
+                Divider(height: 18, color: primaryBlue.withAlpha(18)),
+                const SizedBox(height: 2),
+                const SizedBox(height: 8),
+                _plainDetail('Approval: ${course.approvalStatus}'),
+                Divider(height: 18, color: primaryBlue.withAlpha(18)),
+                const SizedBox(height: 2),
+                const SizedBox(height: 8),
+                _plainDetail('Remark: ${course.remark}'),
               ],
             ),
           ),
@@ -668,6 +755,17 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
     );
   }
 
+  Widget _plainDetail(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Colors.black87,
+        fontWeight: FontWeight.w500,
+        height: 1.35,
+      ),
+    );
+  }
+
   Widget _statusChip(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -683,27 +781,6 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
           fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
-      ),
-    );
-  }
-
-  Widget _infoRow(String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 68,
-            child: Text(title, style: const TextStyle(color: Colors.grey)),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ),
-        ],
       ),
     );
   }
