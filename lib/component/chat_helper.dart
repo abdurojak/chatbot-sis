@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:chatbot/component/krs_requirement_buble.dart';
+import 'package:chatbot/convocation_screen.dart';
 import 'package:chatbot/fill_krs.dart';
 import 'package:chatbot/get_invoice.dart';
 import 'package:chatbot/kpu_screen.dart';
@@ -122,6 +123,23 @@ class BotActionHandle {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const InvoicePage()),
+        );
+        return true;
+
+      case 'Transaksi Wisuda':
+        if (token == null || idLogin == null) {
+          if (!context.mounted) return true;
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
+          return true;
+        }
+
+        if (!context.mounted) return true;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ConvocationPage()),
         );
         return true;
 

@@ -473,64 +473,120 @@ class MbkmLogEntry {
 }
 
 class MbkmLogEvidence {
-  final String mime;
-  final String data;
+  final String idFile;
   final String remark;
   final String fileName;
-  final String url;
 
   const MbkmLogEvidence({
-    required this.mime,
-    required this.data,
+    required this.idFile,
     required this.remark,
     required this.fileName,
-    required this.url,
   });
 
   factory MbkmLogEvidence.fromJson(Map<String, dynamic> json) {
+    final idFile = _readString(json['idfile'] ?? json['id_file']);
     return MbkmLogEvidence(
-      mime: _readString(json['mime'] ?? json['mime_type'] ?? json['file_mime']),
-      data: _readString(
-        json['data'] ?? json['base64'] ?? json['file_data'] ?? json['content'],
-      ),
+      idFile: idFile,
       remark: _readString(
         json['remark'] ?? json['keterangan'] ?? json['description'],
         fallback: '-',
       ),
       fileName: _readString(
         json['file_name'] ?? json['filename'] ?? json['name'],
-        fallback: 'Bukti',
+        fallback: idFile.isEmpty ? 'Bukti' : 'Bukti #$idFile',
       ),
-      url: _readString(json['url'] ?? json['file_url'] ?? json['path']),
+    );
+  }
+}
+
+class MbkmFetchedEvidence {
+  final String base64Data;
+  final Uint8List bytes;
+  final String mime;
+  final String fileName;
+
+  const MbkmFetchedEvidence({
+    required this.base64Data,
+    required this.bytes,
+    required this.mime,
+    required this.fileName,
+  });
+
+  factory MbkmFetchedEvidence.fromBase64(
+    String rawBase64, {
+    String fallbackName = 'Bukti',
+  }) {
+    final sanitized = rawBase64.contains(',')
+        ? rawBase64.substring(rawBase64.indexOf(',') + 1)
+        : rawBase64;
+    final bytes = base64Decode(sanitized);
+    final mime = _detectMime(bytes);
+    final extension = _extensionForMime(mime);
+
+    return MbkmFetchedEvidence(
+      base64Data: sanitized,
+      bytes: bytes,
+      mime: mime,
+      fileName: extension.isEmpty ? fallbackName : '$fallbackName.$extension',
     );
   }
 
-  bool get isPdf =>
-      mime.toLowerCase().contains('pdf') ||
-      fileName.toLowerCase().endsWith('.pdf');
+  bool get isPdf => mime.contains('pdf');
 
-  bool get isImage =>
-      mime.toLowerCase().startsWith('image/') ||
-      fileName.toLowerCase().endsWith('.png') ||
-      fileName.toLowerCase().endsWith('.jpg') ||
-      fileName.toLowerCase().endsWith('.jpeg');
+  bool get isImage => mime.startsWith('image/');
+}
 
-  bool get hasPreviewData => bytes != null || url.isNotEmpty;
+String _detectMime(Uint8List bytes) {
+  if (bytes.length >= 4 &&
+      bytes[0] == 0x25 &&
+      bytes[1] == 0x50 &&
+      bytes[2] == 0x44 &&
+      bytes[3] == 0x46) {
+    return 'application/pdf';
+  }
 
-  Uint8List? get bytes {
-    if (data.isEmpty) {
-      return null;
-    }
+  if (bytes.length >= 8 &&
+      bytes[0] == 0x89 &&
+      bytes[1] == 0x50 &&
+      bytes[2] == 0x4E &&
+      bytes[3] == 0x47) {
+    return 'image/png';
+  }
 
-    final sanitized = data.contains(',')
-        ? data.substring(data.indexOf(',') + 1)
-        : data;
+  if (bytes.length >= 3 &&
+      bytes[0] == 0xFF &&
+      bytes[1] == 0xD8 &&
+      bytes[2] == 0xFF) {
+    return 'image/jpeg';
+  }
 
-    try {
-      return base64Decode(sanitized);
-    } catch (_) {
-      return null;
-    }
+  if (bytes.length >= 12 &&
+      bytes[0] == 0x52 &&
+      bytes[1] == 0x49 &&
+      bytes[2] == 0x46 &&
+      bytes[3] == 0x46 &&
+      bytes[8] == 0x57 &&
+      bytes[9] == 0x45 &&
+      bytes[10] == 0x42 &&
+      bytes[11] == 0x50) {
+    return 'image/webp';
+  }
+
+  return 'application/octet-stream';
+}
+
+String _extensionForMime(String mime) {
+  switch (mime) {
+    case 'application/pdf':
+      return 'pdf';
+    case 'image/png':
+      return 'png';
+    case 'image/jpeg':
+      return 'jpg';
+    case 'image/webp':
+      return 'webp';
+    default:
+      return '';
   }
 }
 

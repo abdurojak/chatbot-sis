@@ -160,6 +160,37 @@ class MbkmService {
     return message;
   }
 
+  static Future<MbkmFetchedEvidence> getFileEvidence({
+    required String idLogin,
+    required String token,
+    required String idFile,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/mbkm-get-file-evidence'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'IdLogin': idLogin, 'token': token, 'idfile': idFile}),
+    );
+
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode != 200) {
+      throw Exception(
+        json['message']?.toString() ??
+            json['status']?.toString() ??
+            'Gagal mengambil file bukti',
+      );
+    }
+
+    final base64Data = json['body']?['data']?.toString() ?? '';
+    if (base64Data.isEmpty) {
+      throw Exception('Data file bukti kosong');
+    }
+
+    return MbkmFetchedEvidence.fromBase64(
+      base64Data,
+      fallbackName: 'Bukti_$idFile',
+    );
+  }
+
   static Future<MbkmExchangeCourseData> getExchangeCourses({
     required String idLogin,
     required String token,

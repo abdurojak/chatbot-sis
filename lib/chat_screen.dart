@@ -1,5 +1,6 @@
 import 'package:chatbot/component/chat_helper.dart';
 import 'package:chatbot/component/app_theme.dart';
+import 'package:chatbot/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -19,12 +20,14 @@ class ChatDetailPageState extends State<ChatDetailPage> {
 
   final TextEditingController _controller = TextEditingController();
   final String senderId = "test_user";
+  String? _idLogin;
 
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _loadSessionData();
 
     chatWidgets.addAll([
       _botBubble(
@@ -44,6 +47,15 @@ class ChatDetailPageState extends State<ChatDetailPage> {
 
       // const SizedBox(height: 12),
     ]);
+  }
+
+  Future<void> _loadSessionData() async {
+    final session = await SessionService.loadSession();
+    if (!mounted) return;
+
+    setState(() {
+      _idLogin = session?.idLogin;
+    });
   }
 
   @override
@@ -105,7 +117,12 @@ class ChatDetailPageState extends State<ChatDetailPage> {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"sender": senderId, "message": message}),
+        body: jsonEncode({
+          "sender": _idLogin ?? "anonymous",
+          "message": message,
+          // "idLogin": _idLogin,
+          // if (_idLogin != null && _idLogin!.isNotEmpty) "idLogin": _idLogin,
+        }),
       );
 
       final data = jsonDecode(response.body) as List;

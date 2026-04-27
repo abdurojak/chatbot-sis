@@ -10,7 +10,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:printing/printing.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class MbkmLogPage extends StatefulWidget {
   final String idMa;
@@ -348,9 +347,7 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
-                                evidence.isPdf
-                                    ? Icons.picture_as_pdf_rounded
-                                    : Icons.image_rounded,
+                                Icons.attach_file_rounded,
                                 color: primaryBlue,
                               ),
                             ),
@@ -371,6 +368,14 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
                                     style: const TextStyle(
                                       color: Colors.black87,
                                       height: 1.35,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'ID File: ${evidence.idFile}',
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
                                     ),
                                   ),
                                 ],
@@ -399,51 +404,75 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
   }
 
   Future<void> _previewEvidence(MbkmLogEvidence evidence) async {
-    final bytes = evidence.bytes;
+    final messenger = ScaffoldMessenger.of(context);
 
-    if (evidence.isPdf && bytes != null) {
-      if (!mounted) return;
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              _MbkmPdfPreviewPage(title: evidence.fileName, bytes: bytes),
-        ),
-      );
-      return;
-    }
-
-    if (evidence.isImage && bytes != null) {
-      if (!mounted) return;
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              _MbkmImagePreviewPage(title: evidence.fileName, bytes: bytes),
-        ),
-      );
-      return;
-    }
-
-    if (evidence.url.isNotEmpty) {
-      final uri = Uri.tryParse(evidence.url);
-      if (uri != null) {
-        final opened = await launchUrl(
-          uri,
-          mode: LaunchMode.externalApplication,
-        );
-        if (opened || !mounted) {
-          return;
-        }
-      }
-    }
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Bukti belum memiliki data preview yang bisa dibuka'),
-      ),
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) =>
+          const Center(child: CircularProgressIndicator()),
     );
+
+    try {
+      final session = await SessionService.loadSession();
+      if (session == null) {
+        throw Exception('Sesi login tidak ditemukan');
+      }
+
+      final fetched = await MbkmService.getFileEvidence(
+        idLogin: session.idLogin,
+        token: session.token,
+        idFile: evidence.idFile,
+      );
+
+      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      if (fetched.isPdf) {
+        if (!mounted) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => _MbkmPdfPreviewPage(
+              title: fetched.fileName,
+              bytes: fetched.bytes,
+            ),
+          ),
+        );
+        return;
+      }
+
+      if (fetched.isImage) {
+        if (!mounted) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => _MbkmImagePreviewPage(
+              title: fetched.fileName,
+              bytes: fetched.bytes,
+            ),
+          ),
+        );
+        return;
+      }
+
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'File bukti berhasil diambil, tetapi preview hanya mendukung PDF atau gambar',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Gagal membuka bukti: $e')),
+      );
+    }
   }
 
   Future<void> _showUploadEvidenceModal(MbkmLogEntry entry) async {
@@ -954,17 +983,14 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [primaryBlue.withAlpha(235), AppThemePalette.dark(0.12)],
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: primaryBlue.withAlpha(42)),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 16,
-            offset: Offset(0, 8),
+            color: Color(0x12000000),
+            blurRadius: 12,
+            offset: Offset(0, 6),
           ),
         ],
       ),
@@ -974,14 +1000,14 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withAlpha(28),
+              color: primaryBlue.withAlpha(14),
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Colors.white24),
+              border: Border.all(color: primaryBlue.withAlpha(28)),
             ),
-            child: const Text(
+            child: Text(
               'Log Aktivitas MBKM',
               style: TextStyle(
-                color: Colors.white,
+                color: primaryBlue,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
@@ -990,10 +1016,10 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
           const SizedBox(height: 12),
           Text(
             widget.title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: AppThemePalette.dark(0.18),
               height: 1.3,
             ),
           ),
@@ -1002,7 +1028,7 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
             _logs.isEmpty
                 ? 'Belum ada log yang tercatat untuk program ini.'
                 : '${_logs.length} log tercatat untuk program ini.',
-            style: const TextStyle(color: Colors.white70, height: 1.4),
+            style: TextStyle(color: Colors.grey.shade700, height: 1.4),
           ),
         ],
       ),

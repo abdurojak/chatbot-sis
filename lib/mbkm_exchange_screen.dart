@@ -211,6 +211,33 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
     );
   }
 
+  void _toggleSection(_MbkmExchangeSection section) {
+    setState(() {
+      final shouldExpand = switch (section) {
+        _MbkmExchangeSection.applied => !_showApplied,
+        _MbkmExchangeSection.internal => !_showInternal,
+        _MbkmExchangeSection.external => !_showExternal,
+      };
+
+      _showApplied = false;
+      _showInternal = false;
+      _showExternal = false;
+
+      if (!shouldExpand) {
+        return;
+      }
+
+      switch (section) {
+        case _MbkmExchangeSection.applied:
+          _showApplied = true;
+        case _MbkmExchangeSection.internal:
+          _showInternal = true;
+        case _MbkmExchangeSection.external:
+          _showExternal = true;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = _data;
@@ -267,20 +294,29 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
             )
           : RefreshIndicator(
               onRefresh: _loadData,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildHeroCard(data),
-                  const SizedBox(height: 18),
-                  _buildSearchField(),
-                  const SizedBox(height: 18),
-                  _buildCollapsibleSection(
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    sliver: SliverToBoxAdapter(child: _buildHeroCard(data)),
+                  ),
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _StickySectionHeaderDelegate(
+                      minExtentValue: 82,
+                      maxExtentValue: 82,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                        child: _buildPinnedSearchBar(),
+                      ),
+                    ),
+                  ),
+                  ..._buildSectionSlivers(
                     title: 'Mata Kuliah Sudah Diajukan',
-                    subtitle:
-                        'Daftar mata kuliah yang sudah masuk proses pengajuan.',
                     isExpanded: _showApplied,
                     onToggle: () =>
-                        setState(() => _showApplied = !_showApplied),
+                        _toggleSection(_MbkmExchangeSection.applied),
                     child: filteredApplied.isEmpty
                         ? _buildEmptyState(
                             query.isEmpty
@@ -295,14 +331,11 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
                                 .toList(),
                           ),
                   ),
-                  const SizedBox(height: 18),
-                  _buildCollapsibleSection(
+                  ..._buildSectionSlivers(
                     title: 'Mata Kuliah Internal',
-                    subtitle:
-                        'Pilihan mata kuliah internal yang tersedia untuk pertukaran.',
                     isExpanded: _showInternal,
                     onToggle: () =>
-                        setState(() => _showInternal = !_showInternal),
+                        _toggleSection(_MbkmExchangeSection.internal),
                     child: filteredInternal.isEmpty
                         ? _buildEmptyState(
                             query.isEmpty
@@ -315,14 +348,11 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
                                 .toList(),
                           ),
                   ),
-                  const SizedBox(height: 18),
-                  _buildCollapsibleSection(
+                  ..._buildSectionSlivers(
                     title: 'Mata Kuliah External',
-                    subtitle:
-                        'Daftar mata kuliah external akan muncul di bagian ini.',
                     isExpanded: _showExternal,
                     onToggle: () =>
-                        setState(() => _showExternal = !_showExternal),
+                        _toggleSection(_MbkmExchangeSection.external),
                     child: filteredExternal.isEmpty
                         ? _buildEmptyState(
                             query.isEmpty
@@ -335,11 +365,54 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
                                 .toList(),
                           ),
                   ),
-                  const SizedBox(height: 90),
+                  const SliverToBoxAdapter(child: SizedBox(height: 90)),
                 ],
               ),
             ),
     );
+  }
+
+  List<Widget> _buildSectionSlivers({
+    required String title,
+    required bool isExpanded,
+    required VoidCallback onToggle,
+    required Widget child,
+  }) {
+    return [
+      if (isExpanded)
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: _StickySectionHeaderDelegate(
+            minExtentValue: 80,
+            maxExtentValue: 80,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: _buildSectionHeader(
+                title: title,
+                isExpanded: isExpanded,
+                onToggle: onToggle,
+                isPinned: true,
+              ),
+            ),
+          ),
+        )
+      else
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: _buildSectionHeader(
+              title: title,
+              isExpanded: isExpanded,
+              onToggle: onToggle,
+            ),
+          ),
+        ),
+      if (isExpanded)
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          sliver: SliverToBoxAdapter(child: child),
+        ),
+    ];
   }
 
   Widget _buildHeroCard(MbkmExchangeCourseData data) {
@@ -433,18 +506,30 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
     );
   }
 
-  Widget _buildCollapsibleSection({
+  Widget _buildPinnedSearchBar() {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppThemePalette.soft(0.985),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: _buildSearchField(),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader({
     required String title,
-    required String subtitle,
     required bool isExpanded,
     required VoidCallback onToggle,
-    required Widget child,
+    bool isPinned = false,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withAlpha(isPinned ? 246 : 255),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: primaryBlue.withAlpha(18)),
+        border: Border.all(color: primaryBlue.withAlpha(isPinned ? 26 : 18)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0F000000),
@@ -462,30 +547,17 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
               borderRadius: BorderRadius.circular(20),
               onTap: onToggle,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                 child: Row(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: primaryBlue,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            subtitle,
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: isPinned ? 17 : 18,
+                          fontWeight: FontWeight.w800,
+                          color: primaryBlue,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -503,13 +575,6 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
               ),
             ),
           ),
-          if (isExpanded) ...[
-            Divider(height: 1, color: primaryBlue.withAlpha(15)),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: child,
-            ),
-          ],
         ],
       ),
     );
@@ -1001,3 +1066,46 @@ class MbkmExchangeSchedulePage extends StatelessWidget {
     );
   }
 }
+
+class _StickySectionHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final double minExtentValue;
+  final double maxExtentValue;
+  final Widget child;
+
+  const _StickySectionHeaderDelegate({
+    required this.minExtentValue,
+    required this.maxExtentValue,
+    required this.child,
+  });
+
+  @override
+  double get minExtent => minExtentValue;
+
+  @override
+  double get maxExtent => maxExtentValue;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: overlapsContent
+            ? AppThemePalette.soft(0.98)
+            : Colors.transparent,
+      ),
+      child: child,
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _StickySectionHeaderDelegate oldDelegate) {
+    return minExtentValue != oldDelegate.minExtentValue ||
+        maxExtentValue != oldDelegate.maxExtentValue ||
+        child != oldDelegate.child;
+  }
+}
+
+enum _MbkmExchangeSection { applied, internal, external }
