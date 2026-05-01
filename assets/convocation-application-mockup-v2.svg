@@ -1,0 +1,67 @@
+<svg width="430" height="1240" viewBox="0 0 430 1240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="24" y1="182" x2="406" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4069B2"/>
+      <stop offset="1" stop-color="#244684"/>
+    </linearGradient>
+  </defs>
+  <rect width="430" height="1240" fill="#F4F7FC"/>
+
+  <rect x="0" y="0" width="430" height="120" fill="#4069B2"/>
+  <path d="M0 120H430V136C430 153.673 415.673 168 398 168H32C14.327 168 0 153.673 0 136V120Z" fill="#4069B2"/>
+  <path d="M30 92L20 82L30 72" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="78" y="88" fill="#fff" font-size="20" font-family="Arial" font-weight="700">Aplikasi Wisuda</text>
+
+  <rect x="24" y="188" width="382" height="132" rx="24" fill="url(#g1)"/>
+  <text x="46" y="228" fill="#fff" font-size="24" font-family="Arial" font-weight="800">Form Aplikasi Wisuda</text>
+  <text x="46" y="258" fill="#E7EEFB" font-size="14" font-family="Arial">Lengkapi data pengajuan dan pilih ukuran toga</text>
+  <text x="46" y="278" fill="#E7EEFB" font-size="14" font-family="Arial">sebelum mengirim aplikasi.</text>
+
+  <rect x="24" y="336" width="382" height="450" rx="22" fill="#fff" stroke="#D6DEEE"/>
+  <text x="44" y="368" fill="#4069B2" font-size="18" font-family="Arial" font-weight="800">Paket Foto</text>
+  <text x="44" y="392" fill="#5F6C82" font-size="13" font-family="Arial">Pilih paket dan tambahan, lalu simpan opsi Anda.</text>
+
+  <rect x="44" y="414" width="342" height="82" rx="18" fill="#EFF4FD" stroke="#D3DDED"/>
+  <text x="62" y="445" fill="#2E5AA4" font-size="16" font-family="Arial" font-weight="800">Paket A</text>
+  <text x="62" y="468" fill="#2E5AA4" font-size="14" font-family="Arial" font-weight="700">Rp350.000</text>
+  <text x="190" y="448" fill="#64748B" font-size="12" font-family="Arial">Pilihan dasar untuk sesi foto.</text>
+
+  <rect x="44" y="508" width="342" height="94" rx="18" fill="url(#g1)"/>
+  <rect x="286" y="520" width="88" height="22" rx="11" fill="#FFFFFF2E"/>
+  <text x="296" y="536" fill="#fff" font-size="11" font-family="Arial" font-weight="700">Rekomendasi</text>
+  <text x="62" y="540" fill="#fff" font-size="16" font-family="Arial" font-weight="800">Paket B</text>
+  <text x="62" y="563" fill="#E7EEFB" font-size="14" font-family="Arial" font-weight="700">Rp550.000</text>
+  <text x="62" y="585" fill="#E7EEFB" font-size="12" font-family="Arial">Opsi menengah dengan dokumentasi lebih lengkap.</text>
+  <circle cx="362" cy="555" r="11" fill="#fff"/>
+  <circle cx="362" cy="555" r="5" fill="#4069B2"/>
+
+  <rect x="44" y="614" width="342" height="82" rx="18" fill="#EFF4FD" stroke="#D3DDED"/>
+  <text x="62" y="645" fill="#2E5AA4" font-size="16" font-family="Arial" font-weight="800">Paket C</text>
+  <text x="62" y="668" fill="#2E5AA4" font-size="14" font-family="Arial" font-weight="700">Rp850.000</text>
+  <text x="190" y="648" fill="#64748B" font-size="12" font-family="Arial">Paket premium untuk kebutuhan fleksibel.</text>
+
+  <rect x="44" y="710" width="342" height="104" rx="16" fill="#F4F7FC" stroke="#D6DEEE"/>
+  <text x="60" y="738" fill="#4069B2" font-size="15" font-family="Arial" font-weight="800">Ringkasan Pilihan</text>
+  <text x="60" y="762" fill="#64748B" font-size="12" font-family="Arial">Paket</text>
+  <text x="120" y="762" fill="#1F2937" font-size="12" font-family="Arial" font-weight="700">Paket B (B)</text>
+  <text x="60" y="783" fill="#64748B" font-size="12" font-family="Arial">Harga</text>
+  <text x="120" y="783" fill="#1F2937" font-size="12" font-family="Arial" font-weight="700">Rp550.000</text>
+  <text x="60" y="804" fill="#64748B" font-size="12" font-family="Arial">Tambahan</text>
+  <text x="120" y="804" fill="#1F2937" font-size="12" font-family="Arial" font-weight="700">Tambahan 53, Tambahan 56</text>
+
+  <rect x="24" y="808" width="382" height="136" rx="22" fill="#fff" stroke="#D6DEEE"/>
+  <text x="44" y="840" fill="#4069B2" font-size="18" font-family="Arial" font-weight="800">Tambahan Paket</text>
+  <rect x="44" y="854" width="342" height="34" rx="10" fill="#F9FBFF" stroke="#DCE4F2"/>
+  <text x="58" y="876" fill="#1F2937" font-size="13" font-family="Arial" font-weight="700">[x] Tambahan 53</text>
+  <rect x="44" y="896" width="342" height="34" rx="10" fill="#F9FBFF" stroke="#DCE4F2"/>
+  <text x="58" y="918" fill="#1F2937" font-size="13" font-family="Arial" font-weight="700">[x] Tambahan 56</text>
+
+  <rect x="24" y="958" width="382" height="58" rx="14" fill="#FFF8E8" stroke="#F3D39B"/>
+  <text x="44" y="994" fill="#9A6500" font-size="14" font-family="Arial" font-weight="700">Batas pembayaran sementara: 25-04-2026</text>
+
+  <rect x="24" y="1030" width="382" height="54" rx="14" fill="#fff" stroke="#4069B2"/>
+  <text x="146" y="1064" fill="#4069B2" font-size="17" font-family="Arial" font-weight="800">Simpan Paket Foto</text>
+
+  <rect x="95" y="1110" width="240" height="56" rx="20" fill="#4069B2"/>
+  <text x="162" y="1146" fill="#fff" font-size="20" font-family="Arial" font-weight="800">Kirim Aplikasi</text>
+</svg>

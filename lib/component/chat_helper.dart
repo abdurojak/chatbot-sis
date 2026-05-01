@@ -1,19 +1,17 @@
-import 'dart:convert';
-
 import 'package:chatbot/component/krs_requirement_buble.dart';
 import 'package:chatbot/convocation_screen.dart';
 import 'package:chatbot/fill_krs.dart';
 import 'package:chatbot/get_invoice.dart';
 import 'package:chatbot/kpu_screen.dart';
 import 'package:chatbot/login_screen.dart';
-import 'package:chatbot/mbkm_menu_screen.dart';
+import 'package:chatbot/mbkm_exchange_screen.dart';
+import 'package:chatbot/mbkm_outbound_screen.dart';
 import 'package:chatbot/result_khs.dart';
 import 'package:chatbot/result_krs.dart';
+import 'package:chatbot/result_skpi.dart';
 import 'package:chatbot/services/krs_service.dart';
 import 'package:chatbot/services/session_service.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
 
 class BotActionHandle {
   static Future<bool> handle(
@@ -102,6 +100,23 @@ class BotActionHandle {
         );
         return true;
 
+      case 'Hasil SKPI':
+        if (token == null || idLogin == null) {
+          if (!context.mounted) return true;
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
+          return true;
+        }
+
+        if (!context.mounted) return true;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const HasilSkpiPage()),
+        );
+        return true;
+
       case 'Hasil Kartu Peserta Ujian':
         if (!context.mounted) return true;
         Navigator.push(
@@ -111,10 +126,19 @@ class BotActionHandle {
         return true;
 
       case 'Transaksi MB Outbound Non PT':
+      case 'Hasil MB Outbound Non PT':
         if (!context.mounted) return true;
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const MbkmMenuPage()),
+          MaterialPageRoute(builder: (_) => const MbkmOutboundPage()),
+        );
+        return true;
+
+      case 'Hasil Pertukaran Mahasiswa':
+        if (!context.mounted) return true;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MbkmExchangePage()),
         );
         return true;
 
@@ -141,45 +165,6 @@ class BotActionHandle {
           context,
           MaterialPageRoute(builder: (_) => const ConvocationPage()),
         );
-        return true;
-
-      case 'Hasil MB Outbound Non PT':
-        if (token == null || idLogin == null) {
-          if (!context.mounted) return true;
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-          );
-          return true;
-        }
-
-        try {
-          final res = await http.post(
-            Uri.parse('https://sismob.trisakti.ac.id/api/get-transkrip'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'IdLogin': idLogin, 'token': token}),
-          );
-
-          final json = jsonDecode(res.body);
-          final fileUrl = json['body']?['data']?['file_path']?.toString() ?? '';
-
-          if (fileUrl.isEmpty) {
-            addBotWidgets([_botBubble('File transkrip tidak ditemukan.')]);
-            return true;
-          }
-
-          addBotWidgets([_botBubble('Membuka hasil nilai kamu...')]);
-
-          final uri = Uri.parse(fileUrl);
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          } else {
-            addBotWidgets([_botBubble('Gagal membuka file PDF.')]);
-          }
-        } catch (_) {
-          addBotWidgets([_botBubble('Gagal mengambil data transkrip.')]);
-        }
-
         return true;
 
       default:

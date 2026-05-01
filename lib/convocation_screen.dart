@@ -1,8 +1,13 @@
+import 'dart:convert';
+
 import 'package:chatbot/component/app_theme.dart';
+import 'package:chatbot/convocation_application_screen.dart';
+import 'package:chatbot/convocation_invitation_screen.dart';
 import 'package:chatbot/models/convocation_models.dart';
 import 'package:chatbot/services/convocation_service.dart';
 import 'package:chatbot/services/session_service.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ConvocationPage extends StatefulWidget {
   const ConvocationPage({super.key});
@@ -15,6 +20,7 @@ class _ConvocationPageState extends State<ConvocationPage> {
   bool _isLoading = true;
   String? _error;
   ConvocationData? _data;
+  final ImagePicker _imagePicker = ImagePicker();
 
   Color get primaryBlue => AppThemePalette.primary;
 
@@ -51,6 +57,217 @@ class _ConvocationPageState extends State<ConvocationPage> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _showCompanionUploadSheet(ConvocationData data) async {
+    final session = await SessionService.loadSession();
+    if (session == null || !mounted) return;
+
+    var convoid = data.companionConvoId;
+    var invitationId = data.companionInvitationId;
+
+    if (convoid.isEmpty || invitationId.isEmpty) {
+      try {
+        final cards = await ConvocationService.getInvitationCards(
+          idLogin: session.idLogin,
+          token: session.token,
+        );
+        if (cards.isNotEmpty) {
+          convoid = cards.first.convoId;
+          invitationId = cards.first.invitationApiId;
+        }
+      } catch (_) {
+        // Ignore and let validation below show a clear message.
+      }
+    }
+
+    if ((convoid.isEmpty || invitationId.isEmpty) && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Data undangan belum tersedia. Silakan buat/lihat undangan dulu.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        XFile? selectedFile;
+        bool isUploading = false;
+        String sourceLabel = '';
+
+        Future<void> pickFile(
+          ImageSource source,
+          StateSetter setModalState,
+        ) async {
+          final picked = await _imagePicker.pickImage(
+            source: source,
+            imageQuality: 90,
+          );
+          if (picked == null || !sheetContext.mounted) return;
+          setModalState(() {
+            selectedFile = picked;
+            sourceLabel = source == ImageSource.camera ? 'Kamera' : 'Galeri';
+          });
+        }
+
+        Future<void> submit(StateSetter setModalState) async {
+          if (selectedFile == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Pilih foto pendamping terlebih dahulu'),
+              ),
+            );
+            return;
+          }
+
+          setModalState(() => isUploading = true);
+          try {
+            final bytes = await selectedFile!.readAsBytes();
+            final mime = _inferImageMime(selectedFile!.name);
+            final message = await ConvocationService.uploadCompanion(
+              idLogin: session.idLogin,
+              token: session.token,
+              convoid: convoid,
+              invitationId: invitationId,
+              mime: mime,
+              base64Data: base64Encode(bytes),
+            );
+
+            if (!mounted || !sheetContext.mounted) return;
+            Navigator.pop(sheetContext);
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(message)));
+            await _loadConvocation();
+          } catch (e) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Gagal unggah pendamping: $e')),
+            );
+          } finally {
+            if (sheetContext.mounted) {
+              setModalState(() => isUploading = false);
+            }
+          }
+        }
+
+        return StatefulBuilder(
+          builder: (_, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  16 + MediaQuery.of(sheetContext).viewInsets.bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Unggah Pendamping (Opsional)',
+                      style: TextStyle(
+                        color: primaryBlue,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Langkah ini bisa dilewati. Jika ingin unggah, pilih foto dari kamera atau galeri.',
+                      style: TextStyle(height: 1.4),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: isUploading
+                                ? null
+                                : () => pickFile(
+                                    ImageSource.camera,
+                                    setModalState,
+                                  ),
+                            icon: const Icon(Icons.photo_camera_outlined),
+                            label: const Text('Kamera'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: isUploading
+                                ? null
+                                : () => pickFile(
+                                    ImageSource.gallery,
+                                    setModalState,
+                                  ),
+                            icon: const Icon(Icons.photo_library_outlined),
+                            label: const Text('Galeri'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppThemePalette.soft(0.95),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: primaryBlue.withAlpha(35)),
+                      ),
+                      child: Text(
+                        selectedFile == null
+                            ? 'Belum ada file dipilih'
+                            : '$sourceLabel • ${selectedFile!.name}',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: isUploading
+                            ? null
+                            : () => submit(setModalState),
+                        icon: isUploading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.upload_rounded),
+                        label: Text(
+                          isUploading ? 'Mengunggah...' : 'Upload Pendamping',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _inferImageMime(String fileName) {
+    final lower = fileName.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.heic')) return 'image/heic';
+    return 'image/jpeg';
   }
 
   @override
@@ -103,7 +320,7 @@ class _ConvocationPageState extends State<ConvocationPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ...steps.map(_buildStepCard),
+                  ...steps.map((step) => _buildStepCard(step, data)),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -141,18 +358,16 @@ class _ConvocationPageState extends State<ConvocationPage> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            data?.hasInfoWisuda == true
-                ? data!.infoWisuda
-                : 'Pantau tahapan wisuda Anda dari yudisium sampai undangan.',
-            style: const TextStyle(color: Colors.white, height: 1.45),
+          const Text(
+            'Pantau tahapan wisuda Anda dari yudisium sampai undangan.',
+            style: TextStyle(color: Colors.white, height: 1.45),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStepCard(ConvocationStep step) {
+  Widget _buildStepCard(ConvocationStep step, ConvocationData? data) {
     final accent = switch (step.state) {
       ConvocationStepState.done => Colors.green.shade600,
       ConvocationStepState.current => primaryBlue,
@@ -260,6 +475,64 @@ class _ConvocationPageState extends State<ConvocationPage> {
                       height: 1.45,
                     ),
                   ),
+                  if (step.title == 'Aplikasi' && data?.canApply == true) ...[
+                    const SizedBox(height: 14),
+                    FilledButton.icon(
+                      onPressed: () async {
+                        final submitted = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ConvocationApplicationPage(
+                              convocationData: data,
+                            ),
+                          ),
+                        );
+
+                        if (submitted == true) {
+                          await _loadConvocation();
+                        }
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: primaryBlue,
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.edit_note_rounded),
+                      label: const Text('Isi Aplikasi'),
+                    ),
+                  ],
+                  if (step.title == 'Unggah Pendamping' &&
+                      data?.canCreateInvitation == true) ...[
+                    const SizedBox(height: 14),
+                    FilledButton.icon(
+                      onPressed: () => _showCompanionUploadSheet(data!),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: primaryBlue,
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.cloud_upload_outlined),
+                      label: const Text('Upload Pendamping'),
+                    ),
+                  ],
+                  if (step.title == 'Buat Undangan' &&
+                      data?.canCreateInvitation == true) ...[
+                    const SizedBox(height: 14),
+                    FilledButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ConvocationInvitationPage(),
+                          ),
+                        );
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: primaryBlue,
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.mail_outline_rounded),
+                      label: const Text('Lihat Undangan'),
+                    ),
+                  ],
                 ],
               ),
             ),

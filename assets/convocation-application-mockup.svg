@@ -1,0 +1,106 @@
+<svg width="430" height="1180" viewBox="0 0 430 1180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hero" x1="32" y1="32" x2="398" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4069B2"/>
+      <stop offset="1" stop-color="#274A88"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="430" height="1180" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0F172A" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="430" height="1180" fill="#F5F7FB"/>
+  <rect x="0" y="0" width="430" height="108" fill="#4069B2"/>
+  <path d="M0 108H430V124C430 141.673 415.673 156 398 156H32C14.327 156 0 141.673 0 124V108Z" fill="#4069B2"/>
+  <path d="M30 89L20 79L30 69" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="78" y="86" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="700">Aplikasi Wisuda</text>
+
+  <g filter="url(#shadow)">
+    <rect x="24" y="182" width="382" height="132" rx="26" fill="url(#hero)"/>
+  </g>
+  <text x="48" y="222" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="700">Form Aplikasi Wisuda</text>
+  <text x="48" y="252" fill="#E7EEFB" font-family="Arial, sans-serif" font-size="14">
+    <tspan x="48" dy="0">Lengkapi data pengajuan dan pilih ukuran toga</tspan>
+    <tspan x="48" dy="22">yang paling sesuai sebelum mengirim aplikasi.</tspan>
+  </text>
+
+  <g filter="url(#shadow)">
+    <rect x="24" y="338" width="382" height="168" rx="22" fill="white"/>
+  </g>
+  <rect x="40" y="356" width="38" height="38" rx="12" fill="#E7EEFB"/>
+  <rect x="50" y="366" width="18" height="18" rx="4" fill="#4069B2"/>
+  <text x="92" y="381" fill="#4069B2" font-family="Arial, sans-serif" font-size="18" font-weight="700">Informasi Utama</text>
+  <rect x="40" y="414" width="350" height="44" rx="14" fill="#F9FAFC" stroke="#D6DEEE"/>
+  <text x="56" y="431" fill="#7B8496" font-family="Arial, sans-serif" font-size="11">Biaya Wisuda</text>
+  <text x="56" y="449" fill="#111827" font-family="Arial, sans-serif" font-size="15" font-weight="600">2400000</text>
+  <rect x="40" y="470" width="350" height="44" rx="14" fill="#F9FAFC" stroke="#D6DEEE"/>
+  <text x="56" y="487" fill="#7B8496" font-family="Arial, sans-serif" font-size="11">Batas Akhir</text>
+  <text x="56" y="505" fill="#111827" font-family="Arial, sans-serif" font-size="15" font-weight="600">25-04-2026</text>
+  <rect x="356" y="482" width="18" height="18" rx="5" fill="#4069B2" fill-opacity="0.12"/>
+  <rect x="360" y="486" width="10" height="10" rx="2" fill="#4069B2"/>
+
+  <g filter="url(#shadow)">
+    <rect x="24" y="530" width="382" height="340" rx="22" fill="white"/>
+  </g>
+  <rect x="40" y="548" width="38" height="38" rx="12" fill="#E7EEFB"/>
+  <path d="M51 558H67V577H51V558Z" fill="#4069B2"/>
+  <text x="92" y="573" fill="#4069B2" font-family="Arial, sans-serif" font-size="18" font-weight="700">Pilih Ukuran Toga</text>
+  <text x="40" y="609" fill="#616B7D" font-family="Arial, sans-serif" font-size="14">
+    <tspan x="40" dy="0">Pilih ukuran yang paling nyaman, lalu cek detail</tspan>
+    <tspan x="40" dy="20">ukurannya di panel bawah.</tspan>
+  </text>
+
+  <rect x="40" y="642" width="96" height="84" rx="18" fill="url(#hero)"/>
+  <text x="56" y="670" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="700">S</text>
+  <text x="56" y="692" fill="#D9E4FA" font-family="Arial, sans-serif" font-size="12" font-weight="600">Compact Fit</text>
+  <rect x="146" y="642" width="96" height="84" rx="18" fill="#EEF3FB" stroke="#D6DEEE"/>
+  <text x="162" y="670" fill="#4069B2" font-family="Arial, sans-serif" font-size="24" font-weight="700">M</text>
+  <text x="162" y="692" fill="#616B7D" font-family="Arial, sans-serif" font-size="12" font-weight="600">Regular Fit</text>
+  <rect x="252" y="642" width="96" height="84" rx="18" fill="#EEF3FB" stroke="#D6DEEE"/>
+  <text x="268" y="670" fill="#4069B2" font-family="Arial, sans-serif" font-size="24" font-weight="700">L</text>
+  <text x="268" y="692" fill="#616B7D" font-family="Arial, sans-serif" font-size="12" font-weight="600">Balanced Fit</text>
+  <rect x="40" y="738" width="96" height="84" rx="18" fill="#EEF3FB" stroke="#D6DEEE"/>
+  <text x="56" y="766" fill="#4069B2" font-family="Arial, sans-serif" font-size="24" font-weight="700">XL</text>
+  <text x="56" y="788" fill="#616B7D" font-family="Arial, sans-serif" font-size="12" font-weight="600">Relaxed Fit</text>
+  <rect x="146" y="738" width="96" height="84" rx="18" fill="#EEF3FB" stroke="#D6DEEE"/>
+  <text x="162" y="766" fill="#4069B2" font-family="Arial, sans-serif" font-size="24" font-weight="700">XXL</text>
+  <text x="162" y="788" fill="#616B7D" font-family="Arial, sans-serif" font-size="12" font-weight="600">Wide Fit</text>
+  <rect x="252" y="738" width="96" height="84" rx="18" fill="#EEF3FB" stroke="#D6DEEE"/>
+  <text x="268" y="766" fill="#4069B2" font-family="Arial, sans-serif" font-size="24" font-weight="700">XXXL</text>
+  <text x="268" y="788" fill="#616B7D" font-family="Arial, sans-serif" font-size="11" font-weight="600">Extra Wide</text>
+
+  <rect x="40" y="838" width="350" height="120" rx="18" fill="#F3F6FC" stroke="#D6DEEE"/>
+  <rect x="56" y="854" width="84" height="30" rx="15" fill="#E7EEFB"/>
+  <text x="72" y="873" fill="#4069B2" font-family="Arial, sans-serif" font-size="14" font-weight="700">Ukuran S</text>
+  <text x="56" y="904" fill="#4B5563" font-family="Arial, sans-serif" font-size="14">
+    <tspan x="56" dy="0">Cocok untuk tubuh kecil hingga ramping.</tspan>
+    <tspan x="56" dy="24">• Panjang toga: 97 cm</tspan>
+    <tspan x="56" dy="22">• Lebar pundak: 42 cm</tspan>
+    <tspan x="56" dy="22">• Panjang lengan: 52 cm</tspan>
+  </text>
+
+  <g filter="url(#shadow)">
+    <rect x="24" y="894" width="382" height="214" rx="22" fill="white"/>
+  </g>
+  <rect x="40" y="912" width="38" height="38" rx="12" fill="#E7EEFB"/>
+  <path d="M50 931H68" stroke="#4069B2" stroke-width="3" stroke-linecap="round"/>
+  <path d="M50 923H68" stroke="#4069B2" stroke-width="3" stroke-linecap="round"/>
+  <text x="92" y="937" fill="#4069B2" font-family="Arial, sans-serif" font-size="18" font-weight="700">Penerima dan Pengiriman</text>
+  <rect x="40" y="970" width="350" height="44" rx="14" fill="#F9FAFC" stroke="#D6DEEE"/>
+  <text x="56" y="987" fill="#7B8496" font-family="Arial, sans-serif" font-size="11">Nama Penerima</text>
+  <text x="56" y="1005" fill="#111827" font-family="Arial, sans-serif" font-size="15" font-weight="600">Agung S</text>
+  <rect x="40" y="1026" width="350" height="64" rx="14" fill="#F9FAFC" stroke="#D6DEEE"/>
+  <text x="56" y="1043" fill="#7B8496" font-family="Arial, sans-serif" font-size="11">Alamat</text>
+  <text x="56" y="1061" fill="#111827" font-family="Arial, sans-serif" font-size="15" font-weight="600">Jl Sumatra, Kebumen, Jawa Tengah</text>
+  <rect x="40" y="1102" width="110" height="44" rx="14" fill="#F9FAFC" stroke="#D6DEEE"/>
+  <text x="56" y="1119" fill="#7B8496" font-family="Arial, sans-serif" font-size="11">Kode Pos</text>
+  <text x="56" y="1137" fill="#111827" font-family="Arial, sans-serif" font-size="15" font-weight="600">16292</text>
+  <rect x="162" y="1102" width="228" height="44" rx="14" fill="#F9FAFC" stroke="#D6DEEE"/>
+  <text x="178" y="1119" fill="#7B8496" font-family="Arial, sans-serif" font-size="11">Telepon</text>
+  <text x="178" y="1137" fill="#111827" font-family="Arial, sans-serif" font-size="15" font-weight="600">07121213121212</text>
+
+  <g filter="url(#shadow)">
+    <rect x="95" y="1128" width="240" height="54" rx="20" fill="#4069B2"/>
+  </g>
+  <text x="162" y="1162" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="700">Kirim Aplikasi</text>
+</svg>

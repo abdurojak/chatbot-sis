@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:chatbot/chat_screen.dart';
 import 'package:chatbot/component/authentication.dart';
 import 'package:chatbot/component/app_theme.dart';
+import 'package:chatbot/models/auth_models.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -65,10 +66,14 @@ class _HomeScreenState extends State<HomeScreen> {
           final nim = session.nim;
 
           if (base64Photo != null && base64Photo.isNotEmpty) {
-            final pureBase64 = base64Photo
-                .split(',')
-                .last; // buang "data:image/jpg;base64,"
-            photoBytes = base64Decode(pureBase64);
+            try {
+              final pureBase64 = base64Photo
+                  .split(',')
+                  .last; // buang "data:image/jpg;base64,"
+              photoBytes = base64Decode(pureBase64);
+            } catch (_) {
+              photoBytes = null;
+            }
           }
 
           name = nim;
@@ -255,15 +260,6 @@ class ChatPage extends StatelessWidget {
 
   // ================= WIDGET =================
 
-  Widget _semesterTitle(String title) {
-    return Center(
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 13, color: Colors.grey),
-      ),
-    );
-  }
-
   Widget _chatCard(BuildContext context) {
     return GestureDetector(
       onTap: () {
@@ -336,13 +332,279 @@ class ChatPage extends StatelessWidget {
   }
 }
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  AuthSession? _session;
+  List<DevAccountCredential> _savedAccounts = const [];
+  bool _isLoading = true;
+
+  static Color get primaryBlue => AppThemePalette.primary;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
+
+  Future<void> _loadProfileData() async {
+    setState(() => _isLoading = true);
+    final session = await AuthStorage.loadSession();
+    final accounts = await AuthStorage.loadDevAccountHistory();
+    if (!mounted) return;
+    setState(() {
+      _session = session;
+      _savedAccounts = accounts;
+      _isLoading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Profile Page', style: TextStyle(fontSize: 24)),
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: primaryBlue.withAlpha(40)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x12000000),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.developer_mode_rounded, color: primaryBlue),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Development Mode',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: primaryBlue,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Input manual idLogin dan token untuk kebutuhan testing lokal.',
+                style: TextStyle(height: 1.4, color: Colors.black87),
+              ),
+              const SizedBox(height: 14),
+              ElevatedButton.icon(
+                onPressed: () => _showDevSessionDialog(context, _session),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryBlue,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(46),
+                ),
+                icon: const Icon(Icons.edit_note_rounded),
+                label: const Text('Input idLogin & token'),
+              ),
+              const SizedBox(height: 10),
+              if (_savedAccounts.isNotEmpty)
+                OutlinedButton.icon(
+                  onPressed: () => _showAccountPicker(context),
+                  icon: const Icon(Icons.switch_account_rounded),
+                  label: const Text('Pilih Akun Tersimpan'),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showDevSessionDialog(
+    BuildContext context,
+    AuthSession? session,
+  ) async {
+    if (!context.mounted) return;
+
+    final idLoginController = TextEditingController(
+      text: session?.idLogin ?? '',
+    );
+    final tokenController = TextEditingController(text: session?.token ?? '');
+    final formKey = GlobalKey<FormState>();
+    var isSaving = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogBuilderContext, setDialogState) {
+            Future<void> save() async {
+              if (!formKey.currentState!.validate()) {
+                return;
+              }
+
+              setDialogState(() => isSaving = true);
+
+              try {
+                final idLogin = idLoginController.text.trim();
+                final token = tokenController.text.trim();
+
+                await AuthStorage.saveManualSession(
+                  idLogin: idLogin,
+                  token: token,
+                );
+                await AuthStorage.saveDevAccountHistory(
+                  idLogin: idLogin,
+                  token: token,
+                );
+
+                if (!dialogContext.mounted || !dialogBuilderContext.mounted) {
+                  return;
+                }
+                Navigator.pop(dialogContext);
+                await _loadProfileData();
+                if (!mounted) return;
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(content: Text('Akun aktif berhasil diganti')),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  SnackBar(content: Text('Gagal menyimpan session: $e')),
+                );
+              } finally {
+                if (dialogContext.mounted) {
+                  setDialogState(() => isSaving = false);
+                }
+              }
+            }
+
+            return AlertDialog(
+              title: const Text('Development Session'),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: idLoginController,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'idLogin wajib diisi';
+                        }
+                        return null;
+                      },
+                      decoration: const InputDecoration(labelText: 'idLogin'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: tokenController,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'token wajib diisi';
+                        }
+                        return null;
+                      },
+                      decoration: const InputDecoration(labelText: 'token'),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving
+                      ? null
+                      : () => Navigator.pop(dialogContext),
+                  child: const Text('Batal'),
+                ),
+                FilledButton(
+                  onPressed: isSaving ? null : save,
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Simpan'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    idLoginController.dispose();
+    tokenController.dispose();
+  }
+
+  Future<void> _showAccountPicker(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: ListView.separated(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            itemCount: _savedAccounts.length,
+            separatorBuilder: (_, _) => const Divider(height: 1),
+            itemBuilder: (_, index) {
+              final account = _savedAccounts[index];
+              final isActive =
+                  _session?.idLogin == account.idLogin &&
+                  _session?.token == account.token;
+              return ListTile(
+                leading: Icon(
+                  isActive
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_off_rounded,
+                  color: primaryBlue,
+                ),
+                title: Text(
+                  account.idLogin,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text(
+                  account.token.length > 18
+                      ? '${account.token.substring(0, 18)}...'
+                      : account.token,
+                ),
+                onTap: () async {
+                  await AuthStorage.saveManualSession(
+                    idLogin: account.idLogin,
+                    token: account.token,
+                  );
+                  if (!mounted || !sheetContext.mounted) return;
+                  Navigator.pop(sheetContext);
+                  await _loadProfileData();
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    SnackBar(content: Text('Akun aktif: ${account.idLogin}')),
+                  );
+                },
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
