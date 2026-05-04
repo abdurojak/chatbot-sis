@@ -182,5 +182,17 @@ void main() {
       expect(result.id, '91298');
       expect(result.message, 'data berhasil ditambahkan');
     });
+
+    test('parses update honor response message', () {
+      final response = {
+        'status': 200,
+        'body': {'data': 'update berhasil'},
+      };
+
+      final result = SkpiTransactionResult.fromJson(response);
+
+      expect(result.id, '');
+      expect(result.message, 'update berhasil');
+    });
   });
 }

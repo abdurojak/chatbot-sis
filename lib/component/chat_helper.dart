@@ -24,21 +24,35 @@ class BotActionHandle {
     final token = session?.token;
     final idLogin = session?.idLogin;
 
+    Future<bool> requireLogin() async {
+      if (token != null && idLogin != null) {
+        return true;
+      }
+
+      if (!context.mounted) {
+        return false;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      return false;
+    }
+
     switch (payload) {
       case 'Transaksi KRS':
-        if (token == null || idLogin == null) {
-          if (!context.mounted) return true;
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-          );
+        if (!await requireLogin()) {
           return true;
         }
 
+        final currentToken = token!;
+        final currentIdLogin = idLogin!;
+
         try {
           final response = await KrsService.getRequirements(
-            idLogin: idLogin,
-            token: token,
+            idLogin: currentIdLogin,
+            token: currentToken,
           );
 
           if (!context.mounted) return true;
@@ -85,6 +99,9 @@ class BotActionHandle {
         return true;
 
       case 'Hasil KRS':
+        if (!await requireLogin()) {
+          return true;
+        }
         if (!context.mounted) return true;
         Navigator.push(
           context,
@@ -93,6 +110,9 @@ class BotActionHandle {
         return true;
 
       case 'Hasil KHS':
+        if (!await requireLogin()) {
+          return true;
+        }
         if (!context.mounted) return true;
         Navigator.push(
           context,
@@ -101,12 +121,7 @@ class BotActionHandle {
         return true;
 
       case 'Hasil SKPI':
-        if (token == null || idLogin == null) {
-          if (!context.mounted) return true;
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-          );
+        if (!await requireLogin()) {
           return true;
         }
 
@@ -118,6 +133,9 @@ class BotActionHandle {
         return true;
 
       case 'Hasil Kartu Peserta Ujian':
+        if (!await requireLogin()) {
+          return true;
+        }
         if (!context.mounted) return true;
         Navigator.push(
           context,
@@ -127,6 +145,9 @@ class BotActionHandle {
 
       case 'Transaksi MB Outbound Non PT':
       case 'Hasil MB Outbound Non PT':
+        if (!await requireLogin()) {
+          return true;
+        }
         if (!context.mounted) return true;
         Navigator.push(
           context,
@@ -135,6 +156,9 @@ class BotActionHandle {
         return true;
 
       case 'Hasil Pertukaran Mahasiswa':
+        if (!await requireLogin()) {
+          return true;
+        }
         if (!context.mounted) return true;
         Navigator.push(
           context,
@@ -143,6 +167,9 @@ class BotActionHandle {
         return true;
 
       case 'Transaksi Pembayaran':
+        if (!await requireLogin()) {
+          return true;
+        }
         if (!context.mounted) return true;
         Navigator.push(
           context,
@@ -151,12 +178,7 @@ class BotActionHandle {
         return true;
 
       case 'Transaksi Wisuda':
-        if (token == null || idLogin == null) {
-          if (!context.mounted) return true;
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-          );
+        if (!await requireLogin()) {
           return true;
         }
 

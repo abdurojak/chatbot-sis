@@ -175,6 +175,65 @@ class SkpiSoftskill {
   }
 }
 
+class SkpiInternship {
+  final String id;
+  final String evidenceFileId;
+  final String title;
+  final String titleEnglish;
+  final String dateStart;
+  final String dateStop;
+  final String position;
+  final String positionEnglish;
+
+  const SkpiInternship({
+    required this.id,
+    required this.evidenceFileId,
+    required this.title,
+    required this.titleEnglish,
+    required this.dateStart,
+    required this.dateStop,
+    required this.position,
+    required this.positionEnglish,
+  });
+
+  factory SkpiInternship.fromJson(Map<String, dynamic> json) {
+    return SkpiInternship(
+      id: _readString(json['idInternship']),
+      evidenceFileId: _readString(json['idfile']),
+      title: _cleanText(json['title'] ?? json['title_internship']),
+      titleEnglish: _cleanText(
+        json['title_bahasa'] ?? json['title_bahasa_internship'],
+      ),
+      dateStart: _readString(json['datestart'] ?? json['datestart_internship']),
+      dateStop: _readString(json['datestop'] ?? json['datestop_internship']),
+      position: _cleanText(
+        json['position'] ?? json['position_internship'],
+        fallback: '-',
+      ),
+      positionEnglish: _cleanText(
+        json['position_bahasa'] ??
+            json['positioneng'] ??
+            json['position_internshipeng'],
+        fallback: '-',
+      ),
+    );
+  }
+
+  String get displayTitle => title.isNotEmpty ? title : titleEnglish;
+
+  String get displayPosition => position != '-' ? position : positionEnglish;
+
+  String get periodLabel {
+    if (dateStart.isEmpty && dateStop.isEmpty) {
+      return '-';
+    }
+    if (dateStart == dateStop || dateStop.isEmpty) {
+      return dateStart;
+    }
+    return '$dateStart - $dateStop';
+  }
+}
+
 class SkpiHonor {
   final String id;
   final String evidenceFileId;
@@ -302,6 +361,91 @@ class SkpiHonorReferenceData {
   }
 }
 
+class SkpiOrganizationReferenceData {
+  final List<SkpiReferenceOption> levels;
+  final List<SkpiReferenceOption> occupacies;
+  final List<SkpiReferenceOption> categories;
+  final List<String> years;
+
+  const SkpiOrganizationReferenceData({
+    required this.levels,
+    required this.occupacies,
+    required this.categories,
+    required this.years,
+  });
+
+  factory SkpiOrganizationReferenceData.fromJson(Map<String, dynamic> json) {
+    final body = json['body'] as Map<String, dynamic>? ?? const {};
+    final data = body['data'] as Map<String, dynamic>? ?? const {};
+    final rawLevels = data['level'] as List? ?? const [];
+    final rawOccupacies = data['occupacy'] as List? ?? const [];
+    final rawCategories = data['category'] as List? ?? const [];
+    final rawYears = data['year'] as List? ?? const [];
+
+    return SkpiOrganizationReferenceData(
+      levels: rawLevels
+          .whereType<Map>()
+          .map(
+            (item) =>
+                SkpiReferenceOption.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+      occupacies: rawOccupacies
+          .whereType<Map>()
+          .map(
+            (item) =>
+                SkpiReferenceOption.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+      categories: rawCategories
+          .whereType<Map>()
+          .map(
+            (item) =>
+                SkpiReferenceOption.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+      years: rawYears
+          .map((item) => item?.toString().trim() ?? '')
+          .where((item) => item.isNotEmpty)
+          .toList(),
+    );
+  }
+}
+
+class SkpiLanguageReferenceData {
+  final List<SkpiReferenceOption> languages;
+  final List<SkpiReferenceOption> standards;
+
+  const SkpiLanguageReferenceData({
+    required this.languages,
+    required this.standards,
+  });
+
+  factory SkpiLanguageReferenceData.fromJson(Map<String, dynamic> json) {
+    final body = json['body'] as Map<String, dynamic>? ?? const {};
+    final data = body['data'] as Map<String, dynamic>? ?? const {};
+    final rawLanguages = data['language'] as List? ?? const [];
+    final rawStandards = data['standar'] as List? ?? const [];
+
+    return SkpiLanguageReferenceData(
+      languages: rawLanguages
+          .whereType<Map>()
+          .map(
+            (item) =>
+                SkpiReferenceOption.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+      standards: rawStandards
+          .whereType<Map>()
+          .map(
+            (item) =>
+                SkpiReferenceOption.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
+    );
+  }
+}
+
 class SkpiTransactionResult {
   final String id;
   final String message;
@@ -310,11 +454,19 @@ class SkpiTransactionResult {
 
   factory SkpiTransactionResult.fromJson(Map<String, dynamic> json) {
     final body = json['body'] as Map<String, dynamic>? ?? const {};
-    final data = body['data'] as Map<String, dynamic>? ?? const {};
+    final data = body['data'];
+
+    if (data is String) {
+      return SkpiTransactionResult(id: '', message: _cleanText(data));
+    }
+
+    final dataMap = data is Map
+        ? Map<String, dynamic>.from(data)
+        : const <String, dynamic>{};
 
     return SkpiTransactionResult(
-      id: _readString(data['id']),
-      message: _cleanText(data['pesan'], fallback: 'Transaksi berhasil'),
+      id: _readString(dataMap['id']),
+      message: _cleanText(dataMap['pesan'], fallback: 'Transaksi berhasil'),
     );
   }
 }
