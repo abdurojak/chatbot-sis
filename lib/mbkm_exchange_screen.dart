@@ -489,7 +489,7 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
                 icon: const Icon(Icons.close_rounded),
               ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: primaryBlue.withAlpha(20)),

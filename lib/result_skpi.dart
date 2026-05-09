@@ -716,7 +716,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     final onPrimary = AppThemePalette.onPrimary(primaryBlue);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('SKPI'),
         backgroundColor: primaryBlue,
@@ -891,11 +891,27 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     );
   }
 
+  Color _tintedSurface(Color accent, [double lightAmount = 0.93]) {
+    final target = AppThemePalette.isDark
+        ? AppThemePalette.surfaceAlt
+        : Colors.white;
+    final amount = AppThemePalette.isDark ? 0.86 : lightAmount;
+    return Color.lerp(accent, target, amount) ?? target;
+  }
+
+  Color _tintedBorder(Color accent) {
+    final target = AppThemePalette.isDark
+        ? AppThemePalette.divider
+        : Colors.white;
+    final amount = AppThemePalette.isDark ? 0.62 : 0.72;
+    return Color.lerp(accent, target, amount) ?? accent;
+  }
+
   Widget _buildErrorCard() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.red.withAlpha(35)),
       ),
@@ -906,7 +922,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
           Text(
             _error ?? 'Terjadi kesalahan.',
             textAlign: TextAlign.center,
-            style: const TextStyle(height: 1.5),
+            style: TextStyle(height: 1.5, color: AppThemePalette.textPrimary),
           ),
           const SizedBox(height: 16),
           ElevatedButton(onPressed: _loadData, child: const Text('Coba Lagi')),
@@ -926,11 +942,11 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
+            color: AppThemePalette.shadow,
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -961,7 +977,10 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
               children: [
                 Text(
                   subtitle,
-                  style: TextStyle(color: Colors.grey.shade600, height: 1.4),
+                  style: TextStyle(
+                    color: AppThemePalette.textSecondary,
+                    height: 1.4,
+                  ),
                 ),
                 if (action != null) ...[const SizedBox(height: 12), action],
               ],
@@ -994,12 +1013,12 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFD),
+        color: AppThemePalette.surfaceAlt,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         'Belum ada data untuk bagian $title.',
-        style: TextStyle(color: Colors.grey.shade700),
+        style: TextStyle(color: AppThemePalette.textSecondary),
       ),
     );
   }
@@ -1008,9 +1027,9 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFAF7),
+        color: _tintedSurface(const Color(0xFFFF7A59)),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFFFE1D9)),
+        border: Border.all(color: _tintedBorder(const Color(0xFFFF7A59))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1041,10 +1060,11 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                   children: [
                     Text(
                       item.displayTitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         height: 1.35,
+                        color: AppThemePalette.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -1119,9 +1139,9 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7FAFF),
+        color: _tintedSurface(const Color(0xFF2F80ED)),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFD9E7FF)),
+        border: Border.all(color: _tintedBorder(const Color(0xFF2F80ED))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1134,9 +1154,10 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                   children: [
                     Text(
                       item.languageName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
+                        color: AppThemePalette.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -1240,9 +1261,9 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7FFF8),
+        color: _tintedSurface(const Color(0xFF34A853)),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFD7F0DC)),
+        border: Border.all(color: _tintedBorder(const Color(0xFF34A853))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1256,10 +1277,11 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                   children: [
                     Text(
                       item.displayTitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         height: 1.35,
+                        color: AppThemePalette.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1364,9 +1386,9 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9F7FF),
+        color: _tintedSurface(const Color(0xFF7C4DFF)),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE3DAFF)),
+        border: Border.all(color: _tintedBorder(const Color(0xFF7C4DFF))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1380,10 +1402,11 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                   children: [
                     Text(
                       item.displayTitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         height: 1.35,
+                        color: AppThemePalette.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1476,9 +1499,9 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF4),
+        color: _tintedSurface(const Color(0xFFF4B400)),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFFBE3A8)),
+        border: Border.all(color: _tintedBorder(const Color(0xFFF4B400))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1492,10 +1515,11 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                   children: [
                     Text(
                       item.displayTitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         height: 1.35,
+                        color: AppThemePalette.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1653,16 +1677,16 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFE6EBF2)),
+        border: Border.all(color: AppThemePalette.divider),
       ),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF4A5568),
+          color: AppThemePalette.textSecondary,
         ),
       ),
     );
@@ -1878,7 +1902,7 @@ class _AddHonorPageState extends State<_AddHonorPage> {
     final primaryBlue = AppThemePalette.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Penghargaan' : 'Tambah Penghargaan'),
         backgroundColor: primaryBlue,
@@ -1993,11 +2017,11 @@ class _AddHonorPageState extends State<_AddHonorPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
+            color: AppThemePalette.shadow,
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -2017,7 +2041,7 @@ class _AddHonorPageState extends State<_AddHonorPage> {
         labelText: label,
         border: const OutlineInputBorder(),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
       ),
       maxLines: label.contains('Judul') ? 2 : 1,
       validator: (value) {
@@ -2033,12 +2057,15 @@ class _AddHonorPageState extends State<_AddHonorPage> {
     return TextFormField(
       controller: _dateController,
       readOnly: true,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Tanggal Penghargaan',
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
         filled: true,
-        fillColor: Colors.white,
-        suffixIcon: Icon(Icons.calendar_today_rounded),
+        fillColor: AppThemePalette.fieldFill,
+        suffixIcon: Icon(
+          Icons.calendar_today_rounded,
+          color: AppThemePalette.textSecondary,
+        ),
       ),
       onTap: _pickDate,
       validator: (value) {
@@ -2062,7 +2089,7 @@ class _AddHonorPageState extends State<_AddHonorPage> {
         labelText: label,
         border: const OutlineInputBorder(),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
       ),
       items: items
           .map(
@@ -2298,7 +2325,7 @@ class _AddOrganizationPageState extends State<_AddOrganizationPage> {
     final primaryBlue = AppThemePalette.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Organisasi' : 'Tambah Organisasi'),
         backgroundColor: primaryBlue,
@@ -2468,11 +2495,11 @@ class _AddOrganizationPageState extends State<_AddOrganizationPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
+            color: AppThemePalette.shadow,
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -2492,7 +2519,7 @@ class _AddOrganizationPageState extends State<_AddOrganizationPage> {
         labelText: label,
         border: const OutlineInputBorder(),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
       ),
       maxLines: label.contains('Judul') ? 2 : 1,
       validator: (value) {
@@ -2516,7 +2543,7 @@ class _AddOrganizationPageState extends State<_AddOrganizationPage> {
         labelText: label,
         border: const OutlineInputBorder(),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
       ),
       items: items,
       onChanged: onChanged,
@@ -2720,7 +2747,7 @@ class _AddLanguagePageState extends State<_AddLanguagePage> {
     final primaryBlue = AppThemePalette.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Bahasa' : 'Tambah Bahasa'),
         backgroundColor: primaryBlue,
@@ -2840,11 +2867,11 @@ class _AddLanguagePageState extends State<_AddLanguagePage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
+            color: AppThemePalette.shadow,
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -2866,7 +2893,7 @@ class _AddLanguagePageState extends State<_AddLanguagePage> {
         labelText: label,
         border: const OutlineInputBorder(),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
@@ -2881,12 +2908,15 @@ class _AddLanguagePageState extends State<_AddLanguagePage> {
     return TextFormField(
       controller: _dateController,
       readOnly: true,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Tanggal Tes',
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
         filled: true,
-        fillColor: Colors.white,
-        suffixIcon: Icon(Icons.calendar_today_rounded),
+        fillColor: AppThemePalette.fieldFill,
+        suffixIcon: Icon(
+          Icons.calendar_today_rounded,
+          color: AppThemePalette.textSecondary,
+        ),
       ),
       onTap: _pickDate,
       validator: (value) {
@@ -2910,7 +2940,7 @@ class _AddLanguagePageState extends State<_AddLanguagePage> {
         labelText: label,
         border: const OutlineInputBorder(),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
       ),
       items: items,
       onChanged: onChanged,
@@ -3061,7 +3091,7 @@ class _AddSoftskillPageState extends State<_AddSoftskillPage> {
     final primaryBlue = AppThemePalette.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Softskill' : 'Tambah Softskill'),
         backgroundColor: primaryBlue,
@@ -3153,11 +3183,11 @@ class _AddSoftskillPageState extends State<_AddSoftskillPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
+            color: AppThemePalette.shadow,
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -3179,7 +3209,7 @@ class _AddSoftskillPageState extends State<_AddSoftskillPage> {
         labelText: label,
         border: const OutlineInputBorder(),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
       ),
       maxLines: label.contains('Judul') ? 2 : 1,
       validator: (value) {
@@ -3202,7 +3232,7 @@ class _AddSoftskillPageState extends State<_AddSoftskillPage> {
         labelText: label,
         border: const OutlineInputBorder(),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
         suffixIcon: const Icon(Icons.calendar_today_rounded),
       ),
       onTap: () => _pickDate(controller),
@@ -3357,7 +3387,7 @@ class _AddInternshipPageState extends State<_AddInternshipPage> {
     final primaryBlue = AppThemePalette.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Magang' : 'Tambah Magang'),
         backgroundColor: primaryBlue,
@@ -3448,11 +3478,11 @@ class _AddInternshipPageState extends State<_AddInternshipPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
+            color: AppThemePalette.shadow,
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -3472,7 +3502,7 @@ class _AddInternshipPageState extends State<_AddInternshipPage> {
         labelText: label,
         border: const OutlineInputBorder(),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
       ),
       maxLines: label.contains('Judul') ? 2 : 1,
       validator: (value) {
@@ -3495,7 +3525,7 @@ class _AddInternshipPageState extends State<_AddInternshipPage> {
         labelText: label,
         border: const OutlineInputBorder(),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
         suffixIcon: const Icon(Icons.calendar_today_rounded),
       ),
       onTap: () => _pickDate(controller),

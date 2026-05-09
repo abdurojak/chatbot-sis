@@ -11,6 +11,7 @@ import 'package:chatbot/result_krs.dart';
 import 'package:chatbot/result_skpi.dart';
 import 'package:chatbot/services/krs_service.dart';
 import 'package:chatbot/services/session_service.dart';
+import 'package:chatbot/component/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class BotActionHandle {
@@ -200,10 +201,10 @@ class BotActionHandle {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFEAF3FF),
+          color: AppThemePalette.soft(0.9),
           borderRadius: BorderRadius.circular(18),
         ),
-        child: Text(text),
+        child: Text(text, style: TextStyle(color: AppThemePalette.textPrimary)),
       ),
     );
   }

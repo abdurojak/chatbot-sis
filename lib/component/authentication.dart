@@ -25,6 +25,7 @@ class AuthStorage {
   static const _keyUserId = 'userid';
   static const _keyNim = 'nim';
   static const _keyColor = 'color';
+  static const _keyDarkMode = 'dark_mode';
   static const _keyPhoto = 'photo';
   static const _keyActive = 'active';
   static const _keyDevAccounts = 'dev_accounts';
@@ -108,6 +109,21 @@ class AuthStorage {
     return prefs.getString(_keyColor);
   }
 
+  static Future<void> saveColor(String color) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyColor, color);
+  }
+
+  static Future<bool> getDarkMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyDarkMode) ?? false;
+  }
+
+  static Future<void> saveDarkMode(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyDarkMode, enabled);
+  }
+
   static Future<String?> getPhotoBase64() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyPhoto);
@@ -125,6 +141,7 @@ class AuthStorage {
     await prefs.remove(_keyUserId);
     await prefs.remove(_keyNim);
     await prefs.remove(_keyColor);
+    await prefs.remove(_keyDarkMode);
     await prefs.remove(_keyPhoto);
     await prefs.remove(_keyActive);
   }

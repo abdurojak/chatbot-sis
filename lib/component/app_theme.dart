@@ -7,11 +7,14 @@ class AppThemeController extends ChangeNotifier {
   static final AppThemeController instance = AppThemeController._();
 
   Color _primaryColor = AppThemePalette.fallbackPrimary;
+  bool _isDarkMode = false;
 
   Color get primaryColor => _primaryColor;
+  bool get isDarkMode => _isDarkMode;
 
   Future<void> loadSavedColor() async {
     final storedColor = await AuthStorage.getColor();
+    _isDarkMode = await AuthStorage.getDarkMode();
     _setPrimaryColor(AppThemePalette.parseHex(storedColor), notify: false);
   }
 
@@ -19,25 +22,38 @@ class AppThemeController extends ChangeNotifier {
     _setPrimaryColor(AppThemePalette.parseHex(hexColor));
   }
 
+  Future<void> updateDarkMode(bool enabled) async {
+    if (_isDarkMode == enabled) return;
+    _isDarkMode = enabled;
+    await AuthStorage.saveDarkMode(enabled);
+    notifyListeners();
+  }
+
   ThemeData get themeData {
     final primaryColor = _primaryColor;
     final onPrimary = AppThemePalette.onPrimary(primaryColor);
+    final brightness = _isDarkMode ? Brightness.dark : Brightness.light;
+    final background = AppThemePalette.background;
+    final surface = AppThemePalette.surface;
     final colorScheme =
         ColorScheme.fromSeed(
           seedColor: primaryColor,
-          brightness: Brightness.light,
+          brightness: brightness,
         ).copyWith(
           primary: primaryColor,
           secondary: primaryColor,
           onPrimary: onPrimary,
-          surface: Colors.white,
+          surface: surface,
         );
 
     return ThemeData(
       useMaterial3: false,
+      brightness: brightness,
       colorScheme: colorScheme,
       primaryColor: primaryColor,
-      scaffoldBackgroundColor: Colors.white,
+      scaffoldBackgroundColor: background,
+      canvasColor: background,
+      cardColor: surface,
       appBarTheme: AppBarTheme(
         backgroundColor: primaryColor,
         foregroundColor: onPrimary,
@@ -56,9 +72,37 @@ class AppThemeController extends ChangeNotifier {
         style: TextButton.styleFrom(foregroundColor: primaryColor),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(color: primaryColor),
+      iconTheme: IconThemeData(color: AppThemePalette.textSecondary),
+      dividerColor: AppThemePalette.divider,
+      dialogTheme: DialogThemeData(
+        backgroundColor: surface,
+        titleTextStyle: TextStyle(
+          color: AppThemePalette.textPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+        ),
+        contentTextStyle: TextStyle(color: AppThemePalette.textSecondary),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: surface,
+        modalBackgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+      ),
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
       ),
+      inputDecorationTheme: InputDecorationTheme(
+        fillColor: AppThemePalette.fieldFill,
+        hintStyle: TextStyle(color: AppThemePalette.textTertiary),
+        labelStyle: TextStyle(color: AppThemePalette.textSecondary),
+        prefixIconColor: AppThemePalette.textSecondary,
+        suffixIconColor: AppThemePalette.textSecondary,
+      ),
+      textTheme: ThemeData(brightness: brightness).textTheme.apply(
+        bodyColor: AppThemePalette.textPrimary,
+        displayColor: AppThemePalette.textPrimary,
+      ),
+      primaryTextTheme: ThemeData(brightness: brightness).primaryTextTheme,
     );
   }
 
@@ -76,6 +120,26 @@ class AppThemePalette {
   static const Color fallbackPrimary = Color(0xFF1E73BE);
 
   static Color get primary => AppThemeController.instance.primaryColor;
+  static bool get isDark => AppThemeController.instance.isDarkMode;
+  static Color get background =>
+      isDark ? const Color(0xFF0F172A) : Colors.white;
+  static Color get surface => isDark ? const Color(0xFF172033) : Colors.white;
+  static Color get surfaceAlt =>
+      isDark ? const Color(0xFF1E293B) : const Color(0xFFF7F9FC);
+  static Color get fieldFill =>
+      isDark ? const Color(0xFF1E293B) : const Color(0xFFF2F5FA);
+  static Color get mutedSurface =>
+      isDark ? const Color(0xFF273449) : const Color(0xFFF2F2F2);
+  static Color get textPrimary =>
+      isDark ? const Color(0xFFF8FAFC) : Colors.black87;
+  static Color get textSecondary =>
+      isDark ? const Color(0xFFCBD5E1) : Colors.black54;
+  static Color get textTertiary =>
+      isDark ? const Color(0xFF94A3B8) : Colors.black45;
+  static Color get divider =>
+      isDark ? Colors.white.withAlpha(24) : Colors.black.withAlpha(18);
+  static Color get shadow =>
+      isDark ? Colors.black.withAlpha(80) : Colors.black.withAlpha(18);
 
   static Color parseHex(String? hexColor) {
     final cleaned = hexColor?.trim();
@@ -108,7 +172,19 @@ class AppThemePalette {
   }
 
   static Color soft([double amount = 0.85]) {
-    return Color.lerp(primary, Colors.white, amount) ?? primary;
+    final target = isDark ? const Color(0xFF0F172A) : Colors.white;
+    return Color.lerp(primary, target, amount) ?? primary;
+  }
+
+  static Color negative([Color? color]) {
+    final target = color ?? primary;
+    final hsl = HSLColor.fromColor(target);
+    return hsl.withHue((hsl.hue + 180) % 360).toColor();
+  }
+
+  static Color negativeSoft([double amount = 0.72]) {
+    final target = isDark ? const Color(0xFF0F172A) : Colors.white;
+    return Color.lerp(negative(), target, amount) ?? negative();
   }
 
   static Color dark([double amount = 0.2]) {
@@ -119,7 +195,7 @@ class AppThemePalette {
     return LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
-      colors: [primary, Colors.white],
+      colors: [primary, background],
     );
   }
 

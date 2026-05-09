@@ -98,8 +98,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return TextField(
       decoration: InputDecoration(
         hintText: hint,
+        hintStyle: TextStyle(color: AppThemePalette.textTertiary),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -114,9 +115,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       readOnly: true,
       decoration: InputDecoration(
         hintText: 'Tanggal Lahir',
-        suffixIcon: const Icon(Icons.calendar_month),
+        hintStyle: TextStyle(color: AppThemePalette.textTertiary),
+        suffixIcon: Icon(
+          Icons.calendar_month,
+          color: AppThemePalette.textSecondary,
+        ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -142,9 +147,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       obscureText: _obscurePassword,
       decoration: InputDecoration(
         hintText: 'Konfirmasi Password Baru',
+        hintStyle: TextStyle(color: AppThemePalette.textTertiary),
         suffixIcon: IconButton(
           icon: Icon(
             _obscurePassword ? Icons.visibility : Icons.visibility_off,
+            color: AppThemePalette.textSecondary,
           ),
           onPressed: () {
             setState(() {
@@ -153,7 +160,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           },
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

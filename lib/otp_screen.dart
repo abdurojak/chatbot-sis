@@ -121,9 +121,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Masukkan kode OTP yang dikirim ke email kamu',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: AppThemePalette.textPrimary),
                       ),
                       const SizedBox(height: 24),
                       Row(
@@ -188,7 +188,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         decoration: InputDecoration(
           counterText: '',
           filled: true,
-          fillColor: Colors.white,
+          fillColor: AppThemePalette.fieldFill,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none,

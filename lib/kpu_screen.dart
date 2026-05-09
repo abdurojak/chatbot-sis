@@ -363,7 +363,7 @@ class _ExamSlipPageState extends State<ExamSlipPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text(
           "Kartu Peserta Ujian",
@@ -544,7 +544,7 @@ class _ExamSlipPageState extends State<ExamSlipPage> {
       child: ElevatedButton(
         onPressed: examData.isEmpty ? null : () => _generatePdf(examData[0]),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
+          backgroundColor: AppThemePalette.surface,
           foregroundColor: Colors.grey,
           elevation: 2,
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),

@@ -148,10 +148,11 @@ class _LoginScreenState extends State<LoginScreen> {
       controller: controller,
       obscureText: isPassword ? _obscurePassword : false,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon),
+        prefixIcon: Icon(icon, color: AppThemePalette.textSecondary),
         hintText: hint,
+        hintStyle: TextStyle(color: AppThemePalette.textTertiary),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppThemePalette.fieldFill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -160,6 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ? IconButton(
                 icon: Icon(
                   _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                  color: AppThemePalette.textSecondary,
                 ),
                 onPressed: () {
                   setState(() {

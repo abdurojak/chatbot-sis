@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/fill_krs.dart';
 import 'package:chatbot/services/session_service.dart';
 import 'package:flutter/material.dart';
@@ -119,7 +120,7 @@ class _PerwalianPageState extends State<PerwalianPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Perwalian Akademik'),
         backgroundColor: PengisianKrsPage.primaryBlue,

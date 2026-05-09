@@ -196,7 +196,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppThemePalette.background,
 
       body: Column(
         children: [
@@ -236,7 +236,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
 
           CircleAvatar(
             radius: 22,
-            backgroundColor: Colors.white,
+            backgroundColor: AppThemePalette.surface,
             child: Icon(Icons.account_balance, color: primaryBlue),
           ),
 
@@ -274,7 +274,10 @@ class ChatDetailPageState extends State<ChatDetailPage> {
           color: AppThemePalette.soft(0.9),
           borderRadius: BorderRadius.circular(18),
         ),
-        child: Text(text, style: const TextStyle(fontSize: 14)),
+        child: Text(
+          text,
+          style: TextStyle(fontSize: 14, color: AppThemePalette.textPrimary),
+        ),
       ),
     );
   }
@@ -295,10 +298,14 @@ class ChatDetailPageState extends State<ChatDetailPage> {
             child: Text(text, style: const TextStyle(color: Colors.white)),
           ),
           const SizedBox(width: 8),
-          const CircleAvatar(
+          CircleAvatar(
             radius: 16,
-            backgroundColor: Colors.grey,
-            child: Icon(Icons.person, size: 16, color: Colors.white),
+            backgroundColor: AppThemePalette.mutedSurface,
+            child: Icon(
+              Icons.person,
+              size: 16,
+              color: AppThemePalette.textSecondary,
+            ),
           ),
         ],
       ),
@@ -340,14 +347,16 @@ class ChatDetailPageState extends State<ChatDetailPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppThemePalette.fieldFill,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: TextField(
                 controller: _controller,
-                decoration: const InputDecoration(
+                style: TextStyle(color: AppThemePalette.textPrimary),
+                decoration: InputDecoration(
                   hintText: 'Message',
                   border: InputBorder.none,
+                  hintStyle: TextStyle(color: AppThemePalette.textTertiary),
                 ),
               ),
             ),

@@ -404,7 +404,7 @@ class _InvoicePageState extends State<InvoicePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AppThemePalette.surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Column(
@@ -647,7 +647,7 @@ class _InvoicePageState extends State<InvoicePage> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
+        backgroundColor: AppThemePalette.background,
         appBar: AppBar(
           title: const Text("Account Statement"),
           backgroundColor: primaryBlue,

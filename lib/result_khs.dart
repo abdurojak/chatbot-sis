@@ -112,7 +112,7 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Hasil KHS'),
         backgroundColor: primaryBlue,
@@ -159,10 +159,10 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
       color: primaryBlue.withAlpha(13),
       child: DropdownButtonFormField<String>(
         initialValue: _selectedSemesterId,
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           labelText: 'Semester',
-          border: OutlineInputBorder(),
-          fillColor: Colors.white,
+          border: const OutlineInputBorder(),
+          fillColor: AppThemePalette.fieldFill,
           filled: true,
         ),
         items: _semesters
