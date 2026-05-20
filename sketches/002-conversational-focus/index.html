@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mockup 2 — Conversational Focus</title>
+  <style>
+    :root {
+      --primary: #1e73be;
+      --primary-deep: #114874;
+      --bg: #f4f8fc;
+      --surface: #ffffff;
+      --surface-alt: #f1f6fb;
+      --text: #173148;
+      --muted: #6f879d;
+      --line: #dde8f2;
+      --accent: #ffd166;
+      --shadow: 0 22px 48px rgba(13, 55, 91, 0.12);
+      --green: #17b37c;
+      --purple: #835cf8;
+      --orange: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at top, #eaf4ff 0%, #f4f8fc 50%, #edf4fa 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 32px 16px;
+    }
+    .phone {
+      width: 390px;
+      min-height: 844px;
+      background: var(--bg);
+      border-radius: 38px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.82);
+      position: relative;
+    }
+    .header {
+      background: linear-gradient(180deg, #175f9c 0%, #1e73be 100%);
+      color: white;
+      padding: 22px 22px 26px;
+      border-bottom-left-radius: 34px;
+      border-bottom-right-radius: 34px;
+    }
+    .status {
+      display: flex; justify-content: space-between; font-size: 13px; opacity: .92; margin-bottom: 20px;
+    }
+    .header-top {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+    }
+    .logo {
+      width: 46px; height: 46px; border-radius: 15px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.22);
+      display: grid; place-items: center; font-weight: 800;
+    }
+    .header-copy h1 { font-size: 22px; line-height: 1.15; }
+    .header-copy p { font-size: 13px; opacity: .84; margin-top: 4px; }
+    .mini-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    }
+    .stat {
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.15); border-radius: 18px; padding: 12px;
+    }
+    .stat strong { display: block; font-size: 18px; margin-bottom: 4px; }
+    .stat span { font-size: 11px; opacity: .84; line-height: 1.35; }
+    .body {
+      padding: 18px 18px 102px;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      padding: 16px;
+      box-shadow: 0 12px 25px rgba(18, 53, 84, .06);
+      margin-bottom: 16px;
+    }
+    .panel h2 { font-size: 17px; margin-bottom: 6px; }
+    .panel p { color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .chat-preview {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .bubble {
+      max-width: 88%;
+      border-radius: 20px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .bot {
+      background: #eef6fd;
+      color: var(--text);
+      border-top-left-radius: 8px;
+    }
+    .user {
+      margin-left: auto;
+      background: linear-gradient(145deg, var(--primary) 0%, #4fa4f0 100%);
+      color: white;
+      border-top-right-radius: 8px;
+    }
+    .suggestions {
+      display: flex;
+      gap: 10px;
+      overflow: auto;
+      margin-top: 12px;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .suggestions::-webkit-scrollbar { display: none; }
+    .suggestion {
+      background: var(--surface-alt);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px 12px;
+      min-width: 156px;
+      cursor: pointer;
+      transition: transform .16s ease, border-color .16s ease;
+    }
+    .suggestion:hover { transform: translateY(-2px); border-color: #b8d3eb; }
+    .suggestion strong { display:block; font-size: 12px; margin-bottom: 4px; }
+    .suggestion span { font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .section-head {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+    }
+    .section-head h3 { font-size: 16px; }
+    .section-head button { border:none; background:none; color:var(--primary); font-weight:700; cursor:pointer; }
+    .tools {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .tool {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 14px;
+      cursor: pointer;
+    }
+    .tool .badge {
+      width: 42px; height: 42px; border-radius: 14px; display:grid; place-items:center; color:white; font-size:19px; margin-bottom: 12px;
+    }
+    .tool h4 { font-size: 14px; margin-bottom: 4px; }
+    .tool p { color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .timeline { display: flex; flex-direction: column; gap: 12px; }
+    .event {
+      display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 14px;
+    }
+    .event .dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; }
+    .event h4 { font-size: 14px; margin-bottom: 4px; }
+    .event p { color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .composer {
+      position: absolute; left: 16px; right: 16px; bottom: 22px;
+      background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border: 1px solid rgba(219,230,241,.9);
+      border-radius: 24px; padding: 12px; box-shadow: 0 18px 36px rgba(17,53,82,.14);
+    }
+    .composer-row { display:flex; gap: 10px; align-items:center; }
+    .input {
+      flex: 1; background: var(--surface-alt); border: 1px solid var(--line); border-radius: 16px; padding: 13px 14px; color: var(--muted); font-size: 13px;
+    }
+    .send {
+      width: 48px; height: 48px; border:none; border-radius: 16px; background: linear-gradient(145deg, var(--accent), #ffb84d); color:#593200; font-size: 18px; font-weight: 900; cursor:pointer;
+    }
+    .subtabs { display:flex; gap:8px; margin-top: 12px; }
+    .tab {
+      border:none; background: #eef4fb; color: var(--primary-deep); border-radius: 999px; padding: 9px 12px; font-size: 12px; font-weight: 700; cursor:pointer;
+    }
+    .tab.active { background: var(--primary); color:white; }
+    .toast {
+      position:absolute; left:18px; right:18px; bottom:104px; background: rgba(18,49,75,.96); color:white; border-radius:18px; padding: 14px 16px; font-size:13px; line-height:1.45; display:none; box-shadow: 0 16px 30px rgba(6,28,47,.26);
+    }
+    .toast.show { display:block; }
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <section class="header">
+      <div class="status"><span>9:41</span><span>●●●  Wi‑Fi  92%</span></div>
+      <div class="header-top">
+        <div class="logo">TS</div>
+        <div class="header-copy">
+          <h1>Beranda yang terasa seperti chat duluan</h1>
+          <p>Masuk, lihat konteks terakhir, lalu lanjut ngobrol tanpa kehilangan shortcut penting.</p>
+        </div>
+      </div>
+      <div class="mini-stats">
+        <div class="stat"><strong>1</strong><span>tagihan butuh tindak lanjut</span></div>
+        <div class="stat"><strong>3</strong><span>menu akademik sering dipakai</span></div>
+        <div class="stat"><strong>08.00</strong><span>pengingat KRS berikutnya</span></div>
+      </div>
+    </section>
+
+    <section class="body">
+      <article class="panel">
+        <h2>Percakapan terakhir</h2>
+        <p>Alih-alih home yang penuh kartu, varian ini memusatkan perhatian ke sesi bantuan akademik yang sedang berjalan.</p>
+        <div class="chat-preview" id="chatPreview">
+          <div class="bubble bot">Halo! Saya Academic Assistant. Hari ini saya bisa bantu cek KRS, jadwal, tagihan, MBKM, atau proses wisuda.</div>
+          <div class="bubble user">Tolong ringkas status akademik saya hari ini.</div>
+          <div class="bubble bot" id="liveReply">KRS dibuka besok pukul 08.00, ada 1 invoice aktif, dan 1 dokumen MBKM masih kurang. Mau saya buka salah satunya?</div>
+        </div>
+        <div class="suggestions">
+          <button class="suggestion" data-reply="Saya buka status pembayaran dan invoice aktif sekarang.">
+            <strong>Pembayaran</strong>
+            <span>Cek invoice + validasi pembayaran</span>
+          </button>
+          <button class="suggestion" data-reply="Saya tampilkan prioritas KRS dan kelas yang perlu kamu ambil.">
+            <strong>KRS</strong>
+            <span>Siapkan mata kuliah prioritas</span>
+          </button>
+          <button class="suggestion" data-reply="Saya buka progres MBKM dan lampiran yang masih kurang.">
+            <strong>MBKM</strong>
+            <span>Lanjutkan aplikasi dan log kegiatan</span>
+          </button>
+        </div>
+      </article>
+
+      <div class="section-head">
+        <h3>Mode cepat</h3>
+        <button id="toggleTools">Ganti fokus</button>
+      </div>
+      <div class="panel">
+        <div class="subtabs">
+          <button class="tab active" data-view="tools">Pintasan</button>
+          <button class="tab" data-view="timeline">Aktivitas</button>
+        </div>
+        <div id="toolsView" style="margin-top: 14px;">
+          <div class="tools">
+            <article class="tool" data-toast="Masuk ke layar chat akademik dengan konteks 'jadwal kuliah'.">
+              <div class="badge" style="background:linear-gradient(145deg, #1e73be, #58a7ef)">📅</div>
+              <h4>Jadwal</h4>
+              <p>Lihat jadwal kuliah dan agenda terdekat.</p>
+            </article>
+            <article class="tool" data-toast="Masuk ke alur hasil studi: KHS, SKPI, dan rekap nilai.">
+              <div class="badge" style="background:linear-gradient(145deg, var(--purple), #b49cff)">📘</div>
+              <h4>Hasil Studi</h4>
+              <p>Cek KHS, SKPI, dan ringkasan progres akademik.</p>
+            </article>
+            <article class="tool" data-toast="Masuk ke menu wisuda, undangan, dan pengajuan konvokasi.">
+              <div class="badge" style="background:linear-gradient(145deg, var(--orange), #ffd166); color:#633600;">🎓</div>
+              <h4>Konvokasi</h4>
+              <p>Kelola undangan, formulir, dan checklist wisuda.</p>
+            </article>
+            <article class="tool" data-toast="Masuk ke profil, tema, dan preferensi pengguna.">
+              <div class="badge" style="background:linear-gradient(145deg, var(--green), #6ee7b7)">⚙️</div>
+              <h4>Preferensi</h4>
+              <p>Ubah tema, akun aktif, dan notifikasi bantuan.</p>
+            </article>
+          </div>
+        </div>
+        <div id="timelineView" style="display:none; margin-top: 14px;">
+          <div class="timeline">
+            <article class="event">
+              <div class="dot" style="background:var(--green)"></div>
+              <div>
+                <h4>Pengingat KRS terjadwal</h4>
+                <p>Assistant sudah menyiapkan pengingat 30 menit sebelum pembukaan KRS.</p>
+              </div>
+            </article>
+            <article class="event">
+              <div class="dot" style="background:var(--orange)"></div>
+              <div>
+                <h4>Invoice aktif belum selesai</h4>
+                <p>Masih ada satu invoice semester aktif yang butuh tindak lanjut pengguna.</p>
+              </div>
+            </article>
+            <article class="event">
+              <div class="dot" style="background:var(--purple)"></div>
+              <div>
+                <h4>Draft MBKM tersimpan</h4>
+                <p>Terakhir diperbarui 2 jam lalu. Ada 1 berkas outbound yang belum diunggah.</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="composer">
+      <div class="composer-row">
+        <div class="input" id="inputText">Tulis pertanyaanmu… misalnya “cek status pembayaran saya”</div>
+        <button class="send" id="sendBtn">➤</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const toast = document.getElementById('toast');
+    const liveReply = document.getElementById('liveReply');
+    let toastTimer;
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    document.querySelectorAll('.suggestion').forEach((button) => {
+      button.addEventListener('click', () => {
+        liveReply.textContent = button.dataset.reply;
+        showToast('Konteks percakapan diperbarui dari shortcut ' + button.querySelector('strong').textContent + '.');
+      });
+    });
+
+    document.querySelectorAll('[data-toast]').forEach((node) => {
+      node.addEventListener('click', () => showToast(node.dataset.toast));
+    });
+
+    const tabs = document.querySelectorAll('.tab');
+    const toolsView = document.getElementById('toolsView');
+    const timelineView = document.getElementById('timelineView');
+    function setView(name) {
+      tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.view === name));
+      toolsView.style.display = name === 'tools' ? 'block' : 'none';
+      timelineView.style.display = name === 'timeline' ? 'block' : 'none';
+      showToast(name === 'tools' ? 'Pintasan cepat ditampilkan.' : 'Aktivitas terakhir ditampilkan.');
+    }
+    tabs.forEach((tab) => tab.addEventListener('click', () => setView(tab.dataset.view)));
+    document.getElementById('toggleTools').addEventListener('click', () => {
+      const next = toolsView.style.display === 'none' ? 'tools' : 'timeline';
+      setView(next);
+    });
+    document.getElementById('sendBtn').addEventListener('click', () => {
+      showToast('Aksi kirim akan membuka layar chat penuh dengan draft pertanyaan ini.');
+    });
+  </script>
+</body>
+</html>

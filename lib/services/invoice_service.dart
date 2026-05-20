@@ -3,6 +3,15 @@ import 'dart:convert';
 import 'package:chatbot/models/invoice_models.dart';
 import 'package:http/http.dart' as http;
 
+class NoDokuInvoiceException implements Exception {
+  final String message;
+
+  const NoDokuInvoiceException([this.message = 'Tidak ada tagihan']);
+
+  @override
+  String toString() => message;
+}
+
 class InvoiceDashboardData {
   final InvoiceResponseData invoices;
   final List<PaymentHistoryEntry> paymentHistory;
@@ -87,6 +96,32 @@ class InvoiceService {
     return ApproveInvoiceResponse.fromJson(response);
   }
 
+  static Future<String> getDokuPaymentUrl({
+    required String idLogin,
+    required String token,
+  }) async {
+    final response = await _post(
+      '/doku-get-payment-url',
+      body: {'IdLogin': idLogin, 'token': token},
+    );
+
+    final responseStatus = response['status']?.toString();
+    final responseMessage =
+        response['data']?.toString() ??
+        response['body']?['data']?.toString() ??
+        '';
+    if (responseStatus == '400' &&
+        responseMessage.toLowerCase().contains('tidak ada tagihan')) {
+      throw NoDokuInvoiceException(responseMessage);
+    }
+
+    final url = _parseDokuPaymentUrl(response);
+    if (url.isEmpty) {
+      throw const FormatException('URL pembayaran DOKU tidak ditemukan.');
+    }
+    return url;
+  }
+
   static Future<Map<String, dynamic>> _post(
     String path, {
     required Map<String, dynamic> body,
@@ -97,7 +132,17 @@ class InvoiceService {
       body: jsonEncode(body),
     );
 
-    return json.decode(response.body) as Map<String, dynamic>;
+    final parsedBody = _extractJsonObject(response.body);
+    return json.decode(parsedBody) as Map<String, dynamic>;
+  }
+
+  static String _extractJsonObject(String responseBody) {
+    final startIndex = responseBody.indexOf('{');
+    final endIndex = responseBody.lastIndexOf('}');
+    if (startIndex == -1 || endIndex == -1 || endIndex < startIndex) {
+      return responseBody;
+    }
+    return responseBody.substring(startIndex, endIndex + 1);
   }
 
   static List<PaymentHistoryEntry> _parsePaymentHistory(
@@ -120,5 +165,56 @@ class InvoiceService {
     }
 
     return null;
+  }
+
+  static String _parseDokuPaymentUrl(Map<String, dynamic> json) {
+    final candidates = [
+      json['payment']?['url'],
+      json['body']?['payment']?['url'],
+      json['body']?['data']?['payment']?['url'],
+      json['body']?['data']?['response']?['payment']?['url'],
+      json['body']?['data']?['url'],
+      json['data']?['payment']?['url'],
+      json['data']?['response']?['payment']?['url'],
+      json['data']?['url'],
+    ];
+
+    for (final candidate in candidates) {
+      final value = candidate?.toString().trim() ?? '';
+      if (value.startsWith('http')) {
+        return value;
+      }
+    }
+
+    return _findHttpUrl(json);
+  }
+
+  static String _findHttpUrl(dynamic source) {
+    if (source is Map) {
+      for (final entry in source.entries) {
+        if (entry.key.toString().toLowerCase() == 'url') {
+          final value = entry.value?.toString().trim() ?? '';
+          if (value.startsWith('http')) {
+            return value;
+          }
+        }
+
+        final nested = _findHttpUrl(entry.value);
+        if (nested.isNotEmpty) {
+          return nested;
+        }
+      }
+    }
+
+    if (source is List) {
+      for (final item in source) {
+        final nested = _findHttpUrl(item);
+        if (nested.isNotEmpty) {
+          return nested;
+        }
+      }
+    }
+
+    return '';
   }
 }

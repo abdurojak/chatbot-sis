@@ -28,6 +28,7 @@ class AuthStorage {
   static const _keyDarkMode = 'dark_mode';
   static const _keyPhoto = 'photo';
   static const _keyActive = 'active';
+  static const _keyRole = 'role';
   static const _keyDevAccounts = 'dev_accounts';
 
   static Future<void> saveAuth({
@@ -38,6 +39,7 @@ class AuthStorage {
     String? color,
     String? photoBase64,
     String? active,
+    String? role,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyToken, token);
@@ -48,6 +50,7 @@ class AuthStorage {
     if (color != null) await prefs.setString(_keyColor, color);
     if (photoBase64 != null) await prefs.setString(_keyPhoto, photoBase64);
     if (active != null) await prefs.setString(_keyActive, active);
+    if (role != null) await prefs.setString(_keyRole, role);
   }
 
   static Future<void> saveSession(AuthSession session) async {
@@ -59,6 +62,7 @@ class AuthStorage {
       color: session.color,
       photoBase64: session.photoBase64,
       active: session.active,
+      role: session.role,
     );
   }
 
@@ -81,6 +85,7 @@ class AuthStorage {
       color: prefs.getString(_keyColor),
       photoBase64: prefs.getString(_keyPhoto),
       active: prefs.getString(_keyActive),
+      role: prefs.getString(_keyRole),
     );
   }
 
@@ -134,6 +139,11 @@ class AuthStorage {
     return prefs.getString(_keyActive) == '1';
   }
 
+  static Future<String?> getRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyRole);
+  }
+
   static Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyToken);
@@ -144,6 +154,7 @@ class AuthStorage {
     await prefs.remove(_keyDarkMode);
     await prefs.remove(_keyPhoto);
     await prefs.remove(_keyActive);
+    await prefs.remove(_keyRole);
   }
 
   static Future<void> saveManualSession({
@@ -158,6 +169,7 @@ class AuthStorage {
     await prefs.remove(_keyColor);
     await prefs.remove(_keyPhoto);
     await prefs.setString(_keyActive, '1');
+    await prefs.setString(_keyRole, 'STD');
   }
 
   static Future<void> saveDevAccountHistory({

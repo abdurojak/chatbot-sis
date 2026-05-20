@@ -26,15 +26,20 @@ class _UserChatDetailPageState extends State<UserChatDetailPage> {
   bool _isSending = false;
   String? _error;
   String? _idLogin;
-  late final String _selectedCategory;
+  late String _selectedCategory;
+  late String _sendCategory;
   List<ChatMessage> _messages = const [];
 
   Color get primaryBlue => AppThemePalette.primary;
+  bool get _canChooseCategory => widget.contact.destType == '3';
 
   @override
   void initState() {
     super.initState();
     _selectedCategory = widget.selectedCategory;
+    _sendCategory = widget.selectedCategory == 'all'
+        ? ChatService.defaultCategory
+        : widget.selectedCategory;
     _loadMessages();
   }
 
@@ -136,9 +141,11 @@ class _UserChatDetailPageState extends State<UserChatDetailPage> {
   }
 
   String get _messageCategory {
-    return _selectedCategory == 'all'
-        ? ChatService.defaultCategory
-        : _selectedCategory;
+    return _sendCategory;
+  }
+
+  List<String> get _categoryOptions {
+    return {ChatService.defaultCategory, ...ChatService.categories}.toList();
   }
 
   List<ChatMessage> get _visibleMessages {
@@ -214,6 +221,11 @@ class _UserChatDetailPageState extends State<UserChatDetailPage> {
                 Text(
                   '${widget.contact.destTypeLabel} • ${_categoryLabel(_selectedCategory)}',
                   style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                ChatDebugIds(
+                  idSender: _idLogin ?? '-',
+                  idReceiver: widget.contact.idReceiver,
                 ),
               ],
             ),
@@ -459,28 +471,10 @@ class _UserChatDetailPageState extends State<UserChatDetailPage> {
         child: Row(
           children: [
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 104),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: AppThemePalette.soft(0.86),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  _categoryLabel(_messageCategory),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: primaryBlue,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                  ),
-                ),
+              constraints: BoxConstraints(
+                maxWidth: _canChooseCategory ? 132 : 104,
               ),
+              child: _categorySelector(),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -528,5 +522,110 @@ class _UserChatDetailPageState extends State<UserChatDetailPage> {
 
   String _categoryLabel(String category) {
     return category == 'all' ? 'ALL' : category.toUpperCase();
+  }
+
+  Widget _categorySelector() {
+    final decoration = BoxDecoration(
+      color: AppThemePalette.soft(0.86),
+      borderRadius: BorderRadius.circular(14),
+    );
+
+    if (!_canChooseCategory) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        decoration: decoration,
+        child: Text(
+          _categoryLabel(_messageCategory),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: primaryBlue,
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      height: 46,
+      padding: const EdgeInsets.only(left: 10, right: 6),
+      decoration: decoration,
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _sendCategory,
+          isExpanded: true,
+          borderRadius: BorderRadius.circular(16),
+          dropdownColor: AppThemePalette.surface,
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: primaryBlue,
+            size: 18,
+          ),
+          style: TextStyle(
+            color: primaryBlue,
+            fontWeight: FontWeight.w800,
+            fontSize: 11,
+          ),
+          selectedItemBuilder: (context) {
+            return _categoryOptions.map((category) {
+              return Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _categoryLabel(category),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList();
+          },
+          items: _categoryOptions.map((category) {
+            return DropdownMenuItem<String>(
+              value: category,
+              child: Text(
+                _categoryLabel(category),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: AppThemePalette.textPrimary),
+              ),
+            );
+          }).toList(),
+          onChanged: (category) {
+            if (category == null) return;
+            setState(() {
+              _sendCategory = category;
+              _selectedCategory = category;
+            });
+            _scrollToBottom();
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class ChatDebugIds extends StatelessWidget {
+  final String idSender;
+  final String idReceiver;
+
+  const ChatDebugIds({
+    super.key,
+    required this.idSender,
+    required this.idReceiver,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'IdSender: $idSender | IdReceiver: $idReceiver',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(
+        color: Colors.white70,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+      ),
+    );
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/models/invoice_models.dart';
 import 'package:chatbot/services/invoice_service.dart';
@@ -5,6 +7,7 @@ import 'package:chatbot/services/session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Untuk fitur salin VA
 import 'package:intl/intl.dart'; // Untuk format rupiah
+import 'package:webview_flutter/webview_flutter.dart';
 
 class InvoicePage extends StatefulWidget {
   const InvoicePage({super.key});
@@ -19,6 +22,7 @@ class _InvoicePageState extends State<InvoicePage> {
   List invoiceList = [];
   // --- TAMBAHKAN INI ---
   bool canGenerateInvoice = false;
+  bool isLoadingDoku = false;
   OpenInvoiceAction? openInvoiceData;
   InvoiceRecord? singleInvoice;
   List<InvoiceRecord> detailInvoices = [];
@@ -162,6 +166,48 @@ class _InvoicePageState extends State<InvoicePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
+  }
+
+  void _showInfoSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: primaryBlue),
+    );
+  }
+
+  Future<void> _openDokuCheckout() async {
+    if (isLoadingDoku) return;
+
+    final session = await SessionService.loadSession();
+    if (session == null) {
+      if (!mounted) return;
+      _showErrorSnackBar("Sesi login tidak ditemukan");
+      return;
+    }
+
+    setState(() => isLoadingDoku = true);
+
+    try {
+      final paymentUrl = await InvoiceService.getDokuPaymentUrl(
+        idLogin: session.idLogin,
+        token: session.token,
+      );
+
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        builder: (_) => _DokuCheckoutDialog(paymentUrl: paymentUrl),
+      );
+    } on NoDokuInvoiceException catch (e) {
+      if (!mounted) return;
+      _showInfoSnackBar(e.message);
+    } catch (e) {
+      if (!mounted) return;
+      _showErrorSnackBar("Gagal membuka pembayaran DOKU: $e");
+    } finally {
+      if (mounted) {
+        setState(() => isLoadingDoku = false);
+      }
+    }
   }
 
   Widget _buildMainInvoiceCard() {
@@ -855,6 +901,8 @@ class _InvoicePageState extends State<InvoicePage> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
+        _buildDokuPaymentCard(),
+        const SizedBox(height: 16),
         if (singleInvoice != null) _buildMainInvoiceCard(),
         if (camabaInvoices.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -868,6 +916,86 @@ class _InvoicePageState extends State<InvoicePage> {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildDokuPaymentCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppThemePalette.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: primaryBlue.withAlpha(60)),
+        boxShadow: [
+          BoxShadow(
+            color: AppThemePalette.shadow,
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: AppThemePalette.soft(0.82),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(Icons.payments_rounded, color: primaryBlue),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Bayar via DOKU",
+                  style: TextStyle(
+                    color: AppThemePalette.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Buka checkout DOKU dalam popup.",
+                  style: TextStyle(
+                    color: AppThemePalette.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: isLoadingDoku ? null : _openDokuCheckout,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryBlue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            ),
+            child: isLoadingDoku
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text(
+                    "Bayar",
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1010,5 +1138,176 @@ class _InvoicePageState extends State<InvoicePage> {
         ],
       ),
     );
+  }
+}
+
+class _DokuCheckoutDialog extends StatefulWidget {
+  final String paymentUrl;
+
+  const _DokuCheckoutDialog({required this.paymentUrl});
+
+  @override
+  State<_DokuCheckoutDialog> createState() => _DokuCheckoutDialogState();
+}
+
+class _DokuCheckoutDialogState extends State<_DokuCheckoutDialog> {
+  late final WebViewController _controller;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (_) {
+            if (mounted) {
+              setState(() => _isLoading = false);
+            }
+          },
+          onWebResourceError: (_) {
+            if (mounted) {
+              setState(() => _isLoading = false);
+            }
+          },
+        ),
+      )
+      ..loadHtmlString(_buildCheckoutHtml(widget.paymentUrl));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
+      backgroundColor: AppThemePalette.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.76,
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                color: AppThemePalette.surface,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.payments_rounded,
+                      color: AppThemePalette.primary,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Pembayaran DOKU',
+                        style: TextStyle(
+                          color: AppThemePalette.textPrimary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: AppThemePalette.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Stack(
+                  children: [
+                    WebViewWidget(controller: _controller),
+                    if (_isLoading)
+                      Center(
+                        child: CircularProgressIndicator(
+                          color: AppThemePalette.primary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _buildCheckoutHtml(String paymentUrl) {
+    final encodedUrl = jsonEncode(paymentUrl);
+    return '''
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://sandbox.doku.com/jokul-checkout-js/v1/jokul-checkout-1.0.0.js"></script>
+    <style>
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        font-family: Arial, sans-serif;
+        background: #f6f8fc;
+      }
+      .wrap {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      .card {
+        width: 100%;
+        max-width: 360px;
+        padding: 28px 22px;
+        border-radius: 22px;
+        background: white;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+        text-align: center;
+      }
+      h3 {
+        margin: 0 0 8px;
+        color: #111827;
+      }
+      p {
+        margin: 0 0 22px;
+        color: #64748b;
+        line-height: 1.45;
+        font-size: 14px;
+      }
+      #checkout-button {
+        width: 100%;
+        border: 0;
+        border-radius: 14px;
+        padding: 15px 18px;
+        color: white;
+        background: #0f62fe;
+        font-size: 15px;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h3>DOKU Checkout</h3>
+        <p>Tekan tombol di bawah untuk melanjutkan pembayaran melalui DOKU.</p>
+        <button id="checkout-button">Checkout Now</button>
+      </div>
+    </div>
+    <script type="text/javascript">
+      var checkoutButton = document.getElementById('checkout-button');
+      checkoutButton.addEventListener('click', function () {
+        loadJokulCheckout($encodedUrl);
+      });
+    </script>
+  </body>
+</html>
+''';
   }
 }

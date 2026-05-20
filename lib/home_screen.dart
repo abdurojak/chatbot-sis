@@ -7,8 +7,11 @@ import 'package:chatbot/component/authentication.dart';
 import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/models/chat_models.dart';
 import 'package:chatbot/models/auth_models.dart';
+import 'package:chatbot/models/notification_models.dart';
 import 'package:chatbot/services/chat_service.dart';
+import 'package:chatbot/services/notification_service.dart';
 import 'package:chatbot/services/session_service.dart';
+import 'package:chatbot/login_screen.dart';
 import 'package:chatbot/user_chat_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -22,6 +25,66 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   // ChatPage langsung aktif
   int selectedIndex = 1;
+  int _notificationCount = 0;
+  int _notificationRefreshTick = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotificationCount();
+  }
+
+  Future<bool> _hasLoginSession() async {
+    final session = await SessionService.loadSession();
+    return session?.token != null && session?.idLogin != null;
+  }
+
+  Future<void> _requireLoginOrOpenNotifications() async {
+    if (!await _hasLoginSession()) {
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      if (mounted) {
+        await _loadNotificationCount();
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      selectedIndex = 0;
+      _notificationRefreshTick++;
+    });
+    await _loadNotificationCount();
+  }
+
+  Future<void> _loadNotificationCount() async {
+    final session = await SessionService.loadSession();
+    final idLogin = session?.idLogin;
+    final token = session?.token;
+
+    if (idLogin == null || token == null) {
+      if (mounted) {
+        setState(() => _notificationCount = 0);
+      }
+      return;
+    }
+
+    try {
+      final result = await NotificationService.openNotifications(
+        idLogin: idLogin,
+        token: token,
+      );
+      if (!mounted) return;
+      setState(() => _notificationCount = result.count);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _notificationCount = 0);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +102,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: IndexedStack(
                       index: selectedIndex,
                       children: [
-                        const NotificationPage(),
-                        ChatPage(themeTick: AppThemeController.instance),
+                        NotificationPage(
+                          refreshTick: _notificationRefreshTick,
+                          onChanged: _loadNotificationCount,
+                        ),
+                        ChatPage(
+                          themeTick: AppThemeController.instance,
+                          notificationCount: _notificationCount,
+                          onOpenNotifications: _requireLoginOrOpenNotifications,
+                        ),
                         const ProfilePage(),
                       ],
                     ),
@@ -118,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  _headerMenu(),
+                  _themeToggleButton(),
                 ],
               ),
             ],
@@ -128,58 +198,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _headerMenu() {
-    return PopupMenuButton<int>(
-      color: AppThemePalette.surface,
-      elevation: 10,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      offset: const Offset(0, 46),
-      icon: const Icon(Icons.menu_rounded, color: Colors.white),
-      itemBuilder: (context) {
-        return [
-          PopupMenuItem<int>(
-            enabled: false,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: AnimatedBuilder(
-              animation: AppThemeController.instance,
-              builder: (menuContext, _) {
-                final isDark = AppThemePalette.isDark;
-                return SizedBox(
-                  width: 72,
-                  child: Center(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () async {
-                        await AppThemeController.instance.updateDarkMode(
-                          !isDark,
-                        );
-                      },
-                      child: Container(
-                        width: 52,
-                        height: 44,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: AppThemePalette.soft(0.82),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppThemePalette.divider),
-                        ),
-                        child: Icon(
-                          isDark
-                              ? Icons.light_mode_rounded
-                              : Icons.dark_mode_rounded,
-                          color: AppThemePalette.primary,
-                          size: 22,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ];
+  Widget _themeToggleButton() {
+    final isDark = AppThemePalette.isDark;
+    return IconButton(
+      tooltip: isDark ? 'Light Mode' : 'Dark Mode',
+      icon: Icon(
+        isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+        color: Colors.white,
+      ),
+      onPressed: () async {
+        await _setDarkMode(!AppThemeController.instance.isDarkMode);
       },
     );
+  }
+
+  Future<void> _setDarkMode(bool enabled) async {
+    await AppThemeController.instance.updateDarkMode(enabled);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   // ================= BOTTOM BAR =================
@@ -197,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _navIcon(Icons.notifications, 0),
+              _navIcon(Icons.notifications, 0, count: _notificationCount),
               const SizedBox(width: 56),
               _navIcon(Icons.person_outline, 2),
             ],
@@ -242,15 +279,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ================= NAV ICON =================
-  Widget _navIcon(IconData icon, int index) {
+  Widget _navIcon(IconData icon, int index, {int count = 0}) {
     final isActive = selectedIndex == index;
 
     return IconButton(
-      icon: Icon(
-        icon,
-        color: isActive ? Colors.white : Colors.white.withAlpha(153),
+      icon: NotificationBadge(
+        count: count,
+        child: Icon(
+          icon,
+          color: isActive ? Colors.white : Colors.white.withAlpha(153),
+        ),
       ),
-      onPressed: () {
+      onPressed: () async {
+        if (index == 0) {
+          await _requireLoginOrOpenNotifications();
+          return;
+        }
         setState(() => selectedIndex = index);
       },
     );
@@ -309,21 +353,289 @@ class BottomBarClipper extends CustomClipper<Path> {
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
-class NotificationPage extends StatelessWidget {
-  const NotificationPage({super.key});
+class NotificationBadge extends StatelessWidget {
+  final int count;
+  final Widget child;
+
+  const NotificationBadge({
+    super.key,
+    required this.count,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Notification Page', style: TextStyle(fontSize: 24)),
+    if (count <= 0) {
+      return child;
+    }
+
+    final label = count > 99 ? '99+' : '$count';
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        child,
+        Positioned(
+          right: -8,
+          top: -8,
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppThemePalette.negative(),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: Colors.white, width: 1.5),
+            ),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class NotificationPage extends StatefulWidget {
+  final int refreshTick;
+  final Future<void> Function()? onChanged;
+
+  const NotificationPage({super.key, this.refreshTick = 0, this.onChanged});
+
+  @override
+  State<NotificationPage> createState() => _NotificationPageState();
+}
+
+class _NotificationPageState extends State<NotificationPage> {
+  bool _isLoading = true;
+  String? _error;
+  NotificationResult? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  @override
+  void didUpdateWidget(covariant NotificationPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.refreshTick != oldWidget.refreshTick) {
+      _loadNotifications();
+    }
+  }
+
+  Future<void> _loadNotifications() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final session = await SessionService.loadSession();
+      final idLogin = session?.idLogin;
+      final token = session?.token;
+      if (idLogin == null || token == null) {
+        throw Exception('Sesi login tidak ditemukan.');
+      }
+
+      final result = await NotificationService.openNotifications(
+        idLogin: idLogin,
+        token: token,
+      );
+      if (!mounted) return;
+      setState(() => _result = result);
+      await widget.onChanged?.call();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: _loadNotifications,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+        children: [
+          Text(
+            'Notifikasi',
+            style: TextStyle(
+              color: AppThemePalette.textPrimary,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${_result?.count ?? 0} notifikasi',
+            style: TextStyle(color: AppThemePalette.textSecondary),
+          ),
+          const SizedBox(height: 18),
+          if (_isLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (_error != null)
+            _notificationMessageBox(_error!, isError: true)
+          else if ((_result?.items ?? const []).isEmpty)
+            _notificationMessageBox('Belum ada notifikasi.')
+          else
+            ..._result!.items.map(
+              (notification) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _notificationCard(notification),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _notificationCard(AppNotification notification) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppThemePalette.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: notification.isUnread
+              ? AppThemePalette.primary.withAlpha(80)
+              : AppThemePalette.divider,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppThemePalette.shadow,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            backgroundColor: AppThemePalette.soft(0.86),
+            child: Icon(
+              Icons.notifications_active_rounded,
+              color: AppThemePalette.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        notification.category,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppThemePalette.primary,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    if (notification.isUnread) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: AppThemePalette.negative(),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  notification.message,
+                  style: TextStyle(
+                    color: AppThemePalette.textPrimary,
+                    height: 1.35,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (notification.createdAt.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    notification.createdAt,
+                    style: TextStyle(
+                      color: AppThemePalette.textTertiary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _notificationMessageBox(String message, {bool isError = false}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: isError
+            ? (AppThemePalette.isDark
+                  ? const Color(0xFF3B1D24)
+                  : const Color(0xFFFFF4F4))
+            : AppThemePalette.surfaceAlt,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppThemePalette.textPrimary),
+          ),
+          if (isError) ...[
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: _loadNotifications,
+              child: const Text('Coba Lagi'),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
 
 class ChatPage extends StatelessWidget {
   final Listenable? themeTick;
+  final int notificationCount;
+  final VoidCallback? onOpenNotifications;
 
-  const ChatPage({super.key, this.themeTick});
+  const ChatPage({
+    super.key,
+    this.themeTick,
+    this.notificationCount = 0,
+    this.onOpenNotifications,
+  });
 
   static Color get primaryBlue => AppThemePalette.primary;
 
@@ -358,6 +670,14 @@ class ChatPage extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(height: 14),
+            _homeChatCard(
+              title: 'Notifikasi',
+              subtitle: 'Lihat pemberitahuan akademik terbaru',
+              icon: Icons.notifications_active_rounded,
+              badgeCount: notificationCount,
+              onTap: onOpenNotifications ?? () {},
+            ),
           ],
         );
       },
@@ -369,6 +689,7 @@ class ChatPage extends StatelessWidget {
     required String subtitle,
     required IconData icon,
     required VoidCallback onTap,
+    int badgeCount = 0,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -383,7 +704,10 @@ class ChatPage extends StatelessWidget {
             CircleAvatar(
               radius: 24,
               backgroundColor: AppThemePalette.surface,
-              child: Icon(icon, color: primaryBlue),
+              child: NotificationBadge(
+                count: badgeCount,
+                child: Icon(icon, color: AppThemePalette.negative()),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -857,29 +1181,6 @@ class _DiscussionPageState extends State<DiscussionPage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                if (contact.unreadCount > 0) ...[
-                  Container(
-                    constraints: const BoxConstraints(minWidth: 24),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: primaryBlue,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      '${contact.unreadCount}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                ],
                 if (contact.lastTimeLabel.isNotEmpty)
                   Text(
                     contact.lastTimeLabel,
@@ -888,6 +1189,27 @@ class _DiscussionPageState extends State<DiscussionPage> {
                       fontSize: 12,
                     ),
                   ),
+                const SizedBox(height: 6),
+                Container(
+                  constraints: const BoxConstraints(minWidth: 24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: primaryBlue,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '${contact.unreadCount}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
               ],
             ),
           ],
@@ -1021,74 +1343,79 @@ class _ProfilePageState extends State<ProfilePage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: AppThemePalette.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: primaryBlue.withAlpha(40)),
-            boxShadow: [
-              BoxShadow(
-                color: AppThemePalette.shadow,
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.developer_mode_rounded, color: primaryBlue),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Development Mode',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: primaryBlue,
-                    ),
+    return AnimatedBuilder(
+      animation: AppThemeController.instance,
+      builder: (context, _) {
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: AppThemePalette.surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: primaryBlue.withAlpha(40)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppThemePalette.shadow,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Text(
-                'Input manual idLogin dan token untuk kebutuhan testing lokal.',
-                style: TextStyle(
-                  height: 1.4,
-                  color: AppThemePalette.textPrimary,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.developer_mode_rounded, color: primaryBlue),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Development Mode',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: primaryBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Input manual idLogin dan token untuk kebutuhan testing lokal.',
+                    style: TextStyle(
+                      height: 1.4,
+                      color: AppThemePalette.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  ElevatedButton.icon(
+                    onPressed: () => _showDevSessionDialog(context, _session),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryBlue,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(46),
+                    ),
+                    icon: const Icon(Icons.edit_note_rounded),
+                    label: const Text('Input idLogin & token'),
+                  ),
+                  const SizedBox(height: 10),
+                  if (_savedAccounts.isNotEmpty)
+                    OutlinedButton.icon(
+                      onPressed: () => _showAccountPicker(context),
+                      icon: const Icon(Icons.switch_account_rounded),
+                      label: const Text('Pilih Akun Tersimpan'),
+                    ),
+                ],
               ),
-              const SizedBox(height: 14),
-              ElevatedButton.icon(
-                onPressed: () => _showDevSessionDialog(context, _session),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryBlue,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(46),
-                ),
-                icon: const Icon(Icons.edit_note_rounded),
-                label: const Text('Input idLogin & token'),
-              ),
-              const SizedBox(height: 10),
-              if (_savedAccounts.isNotEmpty)
-                OutlinedButton.icon(
-                  onPressed: () => _showAccountPicker(context),
-                  icon: const Icon(Icons.switch_account_rounded),
-                  label: const Text('Pilih Akun Tersimpan'),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        _darkModeCard(),
-        const SizedBox(height: 16),
-        _facultyThemeCard(),
-      ],
+            ),
+            const SizedBox(height: 16),
+            _darkModeCard(),
+            const SizedBox(height: 16),
+            _facultyThemeCard(),
+          ],
+        );
+      },
     );
   }
 

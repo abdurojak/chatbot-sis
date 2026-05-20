@@ -6,6 +6,7 @@ class AuthSession {
   final String? color;
   final String? photoBase64;
   final String? active;
+  final String? role;
 
   const AuthSession({
     required this.token,
@@ -15,6 +16,7 @@ class AuthSession {
     this.color,
     this.photoBase64,
     this.active,
+    this.role,
   });
 
   factory AuthSession.fromLoginJson(Map<String, dynamic> json) {
@@ -26,10 +28,27 @@ class AuthSession {
       color: _readNullableString(json['color']),
       photoBase64: _readNullableString(json['photo']),
       active: _readNullableString(json['Active']),
+      role: _readNullableString(json['role']),
     );
   }
 
   bool get isActive => active == '1';
+  bool get isStudent => role == 'STD';
+  bool get isLecturer => role == 'DSN';
+  bool get isGuardian => role == 'OTW';
+
+  AuthSession copyWith({String? role}) {
+    return AuthSession(
+      token: token,
+      idLogin: idLogin,
+      userId: userId,
+      nim: nim,
+      color: color,
+      photoBase64: photoBase64,
+      active: active,
+      role: role ?? this.role,
+    );
+  }
 }
 
 class LoginResult {

@@ -1,6 +1,7 @@
 import 'package:chatbot/component/chat_helper.dart';
 import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/services/session_service.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -118,7 +119,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "sender": _idLogin ?? "anonymous",
+          "sender": _senderIdentifier,
           "message": message,
           // "idLogin": _idLogin,
           // if (_idLogin != null && _idLogin!.isNotEmpty) "idLogin": _idLogin,
@@ -156,6 +157,16 @@ class ChatDetailPageState extends State<ChatDetailPage> {
         ),
       ]);
     }
+  }
+
+  String get _senderIdentifier {
+    final idLogin = _idLogin?.trim();
+    if (idLogin != null && idLogin.isNotEmpty) {
+      return idLogin;
+    }
+
+    final now = DateTime.now().toIso8601String();
+    return sha1.convert(utf8.encode(now)).toString();
   }
 
   Widget _botMenuFromApi(List buttons) {

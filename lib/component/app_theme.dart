@@ -25,8 +25,8 @@ class AppThemeController extends ChangeNotifier {
   Future<void> updateDarkMode(bool enabled) async {
     if (_isDarkMode == enabled) return;
     _isDarkMode = enabled;
-    await AuthStorage.saveDarkMode(enabled);
     notifyListeners();
+    await AuthStorage.saveDarkMode(enabled);
   }
 
   ThemeData get themeData {

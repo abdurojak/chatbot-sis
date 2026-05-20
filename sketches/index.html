@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chatbot SIS — Homescreen Mockups</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, #e7f2fd 0%, #f7fbff 100%);
+      color: #173148;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    h1 { font-size: 34px; margin-bottom: 10px; }
+    p.lead { color: #62809a; font-size: 17px; line-height: 1.6; margin-bottom: 26px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+    .card {
+      background: rgba(255,255,255,.88);
+      border: 1px solid #d7e5f2;
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 18px 40px rgba(16, 59, 94, .08);
+    }
+    .tag {
+      display: inline-block; padding: 7px 11px; border-radius: 999px; background: #eef6fd; color: #1e73be; font-size: 12px; font-weight: 800; margin-bottom: 14px;
+    }
+    h2 { font-size: 22px; margin-bottom: 10px; }
+    ul { margin: 10px 0 18px 18px; color: #62809a; line-height: 1.55; }
+    a {
+      display: inline-block; text-decoration: none; color: white; background: #1e73be; padding: 12px 16px; border-radius: 14px; font-weight: 700;
+    }
+    .secondary { background: #173148; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Homescreen mockups untuk Chatbot SIS</h1>
+    <p class="lead">Dua arah desain berdasarkan struktur Flutter app saat ini: satu lebih dashboard/tool-first, satu lagi lebih chat-first.</p>
+    <div class="grid">
+      <article class="card">
+        <span class="tag">Variant 1</span>
+        <h2>Academic Command Center</h2>
+        <ul>
+          <li>Hero ringkasan akademik</li>
+          <li>Grid shortcut untuk KRS, pembayaran, MBKM, konvokasi</li>
+          <li>Kartu status harian + handoff ke chatbot</li>
+        </ul>
+        <a href="001-academic-command-center/index.html">Buka mockup</a>
+      </article>
+      <article class="card">
+        <span class="tag">Variant 2</span>
+        <h2>Conversational Focus</h2>
+        <ul>
+          <li>Preview percakapan sebagai konten utama</li>
+          <li>Shortcut konteks yang mengubah respons assistant</li>
+          <li>Composer bawah untuk transisi ke chat penuh</li>
+        </ul>
+        <a class="secondary" href="002-conversational-focus/index.html">Buka mockup</a>
+      </article>
+    </div>
+  </div>
+</body>
+</html>
