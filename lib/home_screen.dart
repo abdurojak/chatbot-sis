@@ -365,7 +365,7 @@ class NotificationBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (count <= 0) {
+    if (count <= 1) {
       return child;
     }
 
@@ -528,7 +528,7 @@ class _NotificationPageState extends State<NotificationPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
-            backgroundColor: AppThemePalette.soft(0.86),
+            backgroundColor: AppThemePalette.accentAvatar,
             child: Icon(
               Icons.notifications_active_rounded,
               color: AppThemePalette.primary,
@@ -703,7 +703,7 @@ class ChatPage extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 24,
-              backgroundColor: AppThemePalette.surface,
+              backgroundColor: AppThemePalette.background,
               child: NotificationBadge(
                 count: badgeCount,
                 child: Icon(icon, color: AppThemePalette.negative()),
@@ -992,7 +992,7 @@ class _DiscussionPageState extends State<DiscussionPage> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppThemePalette.soft(0.78)
+              ? AppThemePalette.accentAvatar
               : AppThemePalette.mutedSurface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: isSelected
@@ -1051,7 +1051,7 @@ class _DiscussionPageState extends State<DiscussionPage> {
           return ChoiceChip(
             label: Text(label),
             selected: selected,
-            selectedColor: AppThemePalette.soft(0.78),
+            selectedColor: AppThemePalette.accentAvatar,
             backgroundColor: AppThemePalette.mutedSurface,
             side: BorderSide.none,
             labelStyle: TextStyle(
@@ -1140,7 +1140,7 @@ class _DiscussionPageState extends State<DiscussionPage> {
           children: [
             CircleAvatar(
               radius: 24,
-              backgroundColor: AppThemePalette.soft(0.78),
+              backgroundColor: AppThemePalette.accentAvatar,
               child: Text(
                 contact.initials,
                 style: TextStyle(

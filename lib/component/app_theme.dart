@@ -140,6 +140,7 @@ class AppThemePalette {
       isDark ? Colors.white.withAlpha(24) : Colors.black.withAlpha(18);
   static Color get shadow =>
       isDark ? Colors.black.withAlpha(80) : Colors.black.withAlpha(18);
+  static Color get accentAvatar => isDark ? soft(0.65) : soft(0.86);
 
   static Color parseHex(String? hexColor) {
     final cleaned = hexColor?.trim();

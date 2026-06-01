@@ -232,6 +232,7 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
     );
 
     return Scaffold(
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Pengisian KRS'),
         backgroundColor: PengisianKrsPage.primaryBlue,
@@ -240,17 +241,27 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? Center(child: Text(_error!))
+          ? Center(
+              child: Text(
+                _error!,
+                style: TextStyle(color: AppThemePalette.textPrimary),
+              ),
+            )
           : Column(
               children: [
                 Container(
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: AppThemePalette.surface,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black26, blurRadius: 8),
+                    border: Border.all(color: AppThemePalette.divider),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppThemePalette.shadow,
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
                     ],
                   ),
                   child: Column(
@@ -284,6 +295,12 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                         opacity: disabled ? 0.5 : 1,
                         child: Card(
                           margin: const EdgeInsets.only(bottom: 12),
+                          color: AppThemePalette.surface,
+                          surfaceTintColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: AppThemePalette.divider),
+                          ),
                           child: Column(
                             children: [
                               ListTile(
@@ -292,9 +309,9 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                                     Expanded(
                                       child: Text(
                                         subject.namaMk,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.blue,
+                                          color: PengisianKrsPage.primaryBlue,
                                           decoration: TextDecoration.underline,
                                         ),
                                       ),
@@ -323,8 +340,19 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                                       ),
                                   ],
                                 ),
-                                subtitle: Text(subject.kodeMk),
-                                trailing: Text('${subject.sks} SKS'),
+                                subtitle: Text(
+                                  subject.kodeMk,
+                                  style: TextStyle(
+                                    color: AppThemePalette.textSecondary,
+                                  ),
+                                ),
+                                trailing: Text(
+                                  '${subject.sks} SKS',
+                                  style: TextStyle(
+                                    color: AppThemePalette.textPrimary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                                 onTap: disabled
                                     ? null
                                     : () async {
@@ -342,7 +370,7 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                                       },
                               ),
                               if (!disabled && isExpanded) ...[
-                                const Divider(),
+                                Divider(color: AppThemePalette.divider),
                                 if (classes == null)
                                   const Padding(
                                     padding: EdgeInsets.all(16),
@@ -375,8 +403,10 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                                               enabled: !item.isFull,
                                               title: Text(
                                                 '${item.className} ($classId)',
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontWeight: FontWeight.bold,
+                                                  color: AppThemePalette
+                                                      .textPrimary,
                                                 ),
                                               ),
                                               subtitle: Column(
@@ -386,6 +416,10 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                                                   ...item.schedules.map(
                                                     (schedule) => Text(
                                                       '${schedule.day} - ${schedule.startTimeShort} - ${schedule.endTimeShort} | ${schedule.room}',
+                                                      style: TextStyle(
+                                                        color: AppThemePalette
+                                                            .textSecondary,
+                                                      ),
                                                     ),
                                                   ),
                                                   const SizedBox(height: 4),
@@ -394,7 +428,8 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
                                                     style: TextStyle(
                                                       color: item.isFull
                                                           ? Colors.red
-                                                          : Colors.black,
+                                                          : AppThemePalette
+                                                                .textSecondary,
                                                     ),
                                                   ),
                                                 ],
@@ -501,14 +536,25 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Expanded(child: Text(title)),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(color: AppThemePalette.textPrimary),
+            ),
+          ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: AppThemePalette.accentAvatar,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(value),
+            child: Text(
+              value,
+              style: TextStyle(
+                color: AppThemePalette.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),

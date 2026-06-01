@@ -2,6 +2,7 @@ import 'package:chatbot/component/chat_helper.dart';
 import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/services/session_service.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -15,6 +16,12 @@ class ChatDetailPage extends StatefulWidget {
 
 class ChatDetailPageState extends State<ChatDetailPage> {
   Color get primaryBlue => AppThemePalette.primary;
+  Color get _botBubbleColor => AppThemePalette.isDark
+      ? AppThemePalette.accentAvatar
+      : AppThemePalette.soft(0.9);
+  Color get _botMenuColor => AppThemePalette.isDark
+      ? AppThemePalette.accentAvatar
+      : AppThemePalette.soft(0.88);
 
   final List<Widget> chatWidgets = [];
   bool _isBotTyping = false;
@@ -175,7 +182,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppThemePalette.soft(0.88),
+          color: _botMenuColor,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -203,6 +210,9 @@ class ChatDetailPageState extends State<ChatDetailPage> {
       ),
     );
   }
+
+  @visibleForTesting
+  Widget buildBotMenuForTest(List buttons) => _botMenuFromApi(buttons);
 
   @override
   Widget build(BuildContext context) {
@@ -282,7 +292,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppThemePalette.soft(0.9),
+          color: _botBubbleColor,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Text(
@@ -324,6 +334,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   Widget _menuItem({required String title, required VoidCallback onTap}) {
+    final color = AppThemePalette.isDark ? Colors.white : primaryBlue;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -333,10 +344,10 @@ class ChatDetailPageState extends State<ChatDetailPage> {
           children: [
             Text(
               title,
-              style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w600),
+              style: TextStyle(color: color, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
-            Container(height: 1, color: primaryBlue),
+            Container(height: 1, color: color),
           ],
         ),
       ),
@@ -349,11 +360,10 @@ class ChatDetailPageState extends State<ChatDetailPage> {
       color: primaryBlue,
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.white),
-            onPressed: () {},
-          ),
-
+          // IconButton(
+          //   icon: const Icon(Icons.add, color: Colors.white),
+          //   onPressed: () {},
+          // ),
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -387,10 +397,10 @@ class ChatDetailPageState extends State<ChatDetailPage> {
             },
           ),
 
-          IconButton(
-            icon: const Icon(Icons.camera_alt, color: Colors.white),
-            onPressed: () {},
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.camera_alt, color: Colors.white),
+          //   onPressed: () {},
+          // ),
         ],
       ),
     );
@@ -402,7 +412,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppThemePalette.soft(0.9),
+          color: _botBubbleColor,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Row(

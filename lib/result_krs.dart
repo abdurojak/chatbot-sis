@@ -130,6 +130,7 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Hasil KRS'),
         backgroundColor: primaryBlue,
@@ -141,14 +142,27 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
             padding: const EdgeInsets.all(16),
             child: DropdownButtonFormField<String>(
               initialValue: _selectedSemesterId,
-              decoration: const InputDecoration(
+              dropdownColor: AppThemePalette.surface,
+              style: TextStyle(color: AppThemePalette.textPrimary),
+              decoration: InputDecoration(
                 labelText: 'Pilih Semester',
-                border: OutlineInputBorder(),
+                labelStyle: TextStyle(color: AppThemePalette.textSecondary),
+                filled: true,
+                fillColor: AppThemePalette.fieldFill,
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppThemePalette.divider),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: primaryBlue, width: 1.4),
+                ),
               ),
               items: _semesters.map((semester) {
                 return DropdownMenuItem<String>(
                   value: semester.idSemesterMaster,
-                  child: Text(semester.semesterMainName),
+                  child: Text(
+                    semester.semesterMainName,
+                    style: TextStyle(color: AppThemePalette.textPrimary),
+                  ),
                 );
               }).toList(),
               onChanged: _onSemesterChanged,
@@ -158,12 +172,21 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
-                ? Center(child: Text(_error!))
+                ? Center(
+                    child: Text(
+                      _error!,
+                      style: TextStyle(color: AppThemePalette.textSecondary),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
                 : kelasList.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
                       'Tidak ada data KRS',
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(
+                        color: AppThemePalette.textSecondary,
+                        fontSize: 16,
+                      ),
                     ),
                   )
                 : _buildKrsList(),
@@ -180,11 +203,28 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
       itemBuilder: (context, index) {
         final kelas = kelasList[index];
         final isApproved = kelas.isApproved;
+        final statusBackground = isApproved
+            ? AppThemePalette.isDark
+                  ? Colors.green.withAlpha(38)
+                  : Colors.green.shade100
+            : AppThemePalette.isDark
+            ? Colors.orange.withAlpha(38)
+            : Colors.orange.shade100;
+        final statusTextColor = isApproved
+            ? AppThemePalette.isDark
+                  ? Colors.greenAccent.shade400
+                  : Colors.green.shade700
+            : AppThemePalette.isDark
+            ? Colors.orangeAccent.shade200
+            : Colors.orange.shade800;
 
         return Card(
+          color: AppThemePalette.surface,
           margin: const EdgeInsets.only(bottom: 16),
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: AppThemePalette.divider),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -193,18 +233,28 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
               children: [
                 Text(
                   '${kelas.code} - ${kelas.courseName}',
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: AppThemePalette.textPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text('SKS: ${kelas.credits}'),
-                Text('Kelas: ${kelas.className}'),
+                Text(
+                  'SKS: ${kelas.credits}',
+                  style: TextStyle(color: AppThemePalette.textSecondary),
+                ),
+                Text(
+                  'Kelas: ${kelas.className}',
+                  style: TextStyle(color: AppThemePalette.textSecondary),
+                ),
                 const SizedBox(height: 10),
-                const Text(
+                Text(
                   'Jadwal:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: AppThemePalette.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 ...kelas.schedules.map(
@@ -212,7 +262,10 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Text(
                       '${jadwal.day} | ${jadwal.startTime} - ${jadwal.endTime} | Ruang: ${jadwal.room}',
-                      style: const TextStyle(fontSize: 13),
+                      style: TextStyle(
+                        color: AppThemePalette.textSecondary,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ),
@@ -225,15 +278,13 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: isApproved
-                          ? Colors.green.shade100
-                          : Colors.orange.shade100,
+                      color: statusBackground,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       isApproved ? 'Disetujui' : 'Menunggu Persetujuan',
                       style: TextStyle(
-                        color: isApproved ? Colors.green : Colors.orange,
+                        color: statusTextColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
                       ),

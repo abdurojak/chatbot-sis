@@ -165,12 +165,15 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
+          backgroundColor: AppThemePalette.surface,
+          surfaceTintColor: Colors.transparent,
           title: const Text('Konfirmasi Drop MK'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ...selectedItems.map(
                 (item) => ListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: Text('${item.code} - ${item.courseName}'),
                   subtitle: Text('Kelas: ${item.className}'),
                 ),
@@ -178,9 +181,18 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: otpController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: AppThemePalette.textPrimary),
+                decoration: InputDecoration(
                   labelText: 'Masukkan OTP',
-                  border: OutlineInputBorder(),
+                  labelStyle: TextStyle(color: AppThemePalette.textSecondary),
+                  filled: true,
+                  fillColor: AppThemePalette.fieldFill,
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppThemePalette.divider),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: primaryBlue, width: 1.4),
+                  ),
                 ),
               ),
             ],
@@ -207,14 +219,25 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Expanded(child: Text(title)),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(color: AppThemePalette.textPrimary),
+            ),
+          ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: AppThemePalette.accentAvatar,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(value),
+            child: Text(
+              value,
+              style: TextStyle(
+                color: AppThemePalette.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -228,6 +251,7 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
     );
 
     return Scaffold(
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('KRS Saya'),
         backgroundColor: primaryBlue,
@@ -245,17 +269,28 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? Center(child: Text(_error!))
+          ? Center(
+              child: Text(
+                _error!,
+                style: TextStyle(color: AppThemePalette.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+            )
           : Column(
               children: [
                 Container(
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: AppThemePalette.surface,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black26, blurRadius: 8),
+                    border: Border.all(color: AppThemePalette.divider),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppThemePalette.shadow,
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
                     ],
                   ),
                   child: Column(
@@ -281,11 +316,36 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
                       final item = _krsList[index];
                       final isApproved = item.isApproved;
                       final canCancel = !isApproved;
+                      final statusBackground = isApproved
+                          ? AppThemePalette.isDark
+                                ? Colors.green.withAlpha(38)
+                                : Colors.green.shade100
+                          : AppThemePalette.isDark
+                          ? Colors.orange.withAlpha(38)
+                          : Colors.orange.shade100;
+                      final statusTextColor = isApproved
+                          ? AppThemePalette.isDark
+                                ? Colors.greenAccent.shade400
+                                : Colors.green.shade700
+                          : AppThemePalette.isDark
+                          ? Colors.orangeAccent.shade200
+                          : Colors.orange.shade800;
 
                       return Card(
+                        color: AppThemePalette.surface,
                         margin: const EdgeInsets.only(bottom: 12),
+                        surfaceTintColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: AppThemePalette.divider),
+                        ),
                         child: CheckboxListTile(
                           controlAffinity: ListTileControlAffinity.leading,
+                          activeColor: primaryBlue,
+                          checkColor: AppThemePalette.onPrimary(primaryBlue),
+                          checkboxShape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                           value: _selectedCourses.contains(item.idRegister),
                           onChanged: canCancel
                               ? (selected) {
@@ -300,7 +360,10 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
                               : null,
                           title: Text(
                             '${item.code} - ${item.courseName}',
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              color: AppThemePalette.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,6 +371,9 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 'Kelas: ${item.className} | SKS: ${item.credits}',
+                                style: TextStyle(
+                                  color: AppThemePalette.textSecondary,
+                                ),
                               ),
                               const SizedBox(height: 8),
                               Container(
@@ -316,9 +382,7 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: isApproved
-                                      ? Colors.green.shade100
-                                      : Colors.orange.shade100,
+                                  color: statusBackground,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
@@ -328,9 +392,7 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color: isApproved
-                                        ? Colors.green
-                                        : Colors.orange,
+                                    color: statusTextColor,
                                   ),
                                 ),
                               ),

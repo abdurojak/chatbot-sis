@@ -7,9 +7,45 @@ import 'package:chatbot/models/skpi_models.dart';
 import 'package:chatbot/services/session_service.dart';
 import 'package:chatbot/services/skpi_service.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:printing/printing.dart';
+
+Color _skpiSectionAccentColor() => AppThemePalette.negative();
+
+Color _skpiDestructiveColor() =>
+    AppThemePalette.isDark ? const Color(0xFF991B1B) : Colors.red;
+
+Color _skpiExpandedItemBackground() => AppThemePalette.primary.withAlpha(42);
+Color _skpiExpandedItemAccent() => AppThemePalette.negative();
+const Color _skpiEditActionColor = Color(0xFFF59E0B);
+const Color _skpiDeleteActionColor = Color(0xFFEF4444);
+
+@visibleForTesting
+Color skpiSectionAccentColorForTest() => _skpiSectionAccentColor();
+
+@visibleForTesting
+Color skpiDestructiveColorForTest() => _skpiDestructiveColor();
+
+@visibleForTesting
+Color skpiExpandedItemBackgroundForTest() => _skpiExpandedItemBackground();
+
+@visibleForTesting
+Color skpiExpandedItemAccentForTest() => _skpiExpandedItemAccent();
+
+@visibleForTesting
+Color skpiEditActionColorForTest() => _skpiEditActionColor;
+
+@visibleForTesting
+Color skpiDeleteActionColorForTest() => _skpiDeleteActionColor;
+
+@visibleForTesting
+Widget buildSkpiEvidenceSourceSheetForTest({
+  required ValueChanged<String> onSelect,
+}) {
+  return _SkpiEvidenceSourceSheet(onSelect: onSelect);
+}
 
 class HasilSkpiPage extends StatefulWidget {
   const HasilSkpiPage({super.key});
@@ -188,28 +224,13 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
   Future<_SelectedSkpiEvidence?> _pickEvidenceFile() async {
     final source = await showModalBottomSheet<String>(
       context: context,
+      backgroundColor: AppThemePalette.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_alt_rounded),
-                title: const Text('Ambil dari Kamera'),
-                onTap: () => Navigator.pop(sheetContext, 'camera'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library_rounded),
-                title: const Text('Pilih dari Galeri'),
-                onTap: () => Navigator.pop(sheetContext, 'gallery'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.picture_as_pdf_rounded),
-                title: const Text('Pilih File PDF'),
-                onTap: () => Navigator.pop(sheetContext, 'pdf'),
-              ),
-            ],
-          ),
+        return _SkpiEvidenceSourceSheet(
+          onSelect: (source) => Navigator.pop(sheetContext, source),
         );
       },
     );
@@ -442,7 +463,10 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              style: FilledButton.styleFrom(
+                backgroundColor: _skpiDestructiveColor(),
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Hapus'),
             ),
           ],
@@ -499,7 +523,10 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              style: FilledButton.styleFrom(
+                backgroundColor: _skpiDestructiveColor(),
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Hapus'),
             ),
           ],
@@ -556,7 +583,10 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              style: FilledButton.styleFrom(
+                backgroundColor: _skpiDestructiveColor(),
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Hapus'),
             ),
           ],
@@ -613,7 +643,10 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              style: FilledButton.styleFrom(
+                backgroundColor: _skpiDestructiveColor(),
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Hapus'),
             ),
           ],
@@ -670,7 +703,10 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              style: FilledButton.styleFrom(
+                backgroundColor: _skpiDestructiveColor(),
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Hapus'),
             ),
           ],
@@ -714,6 +750,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
   @override
   Widget build(BuildContext context) {
     final onPrimary = AppThemePalette.onPrimary(primaryBlue);
+    final sectionAccent = _skpiSectionAccentColor();
 
     return Scaffold(
       backgroundColor: AppThemePalette.background,
@@ -743,7 +780,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                 subtitle:
                     '${_organizations.length} pengalaman organisasi dan kepanitiaan',
                 icon: Icons.groups_rounded,
-                accentColor: const Color(0xFFFF7A59),
+                accentColor: sectionAccent,
                 items: _organizations,
                 itemBuilder: _buildOrganizationItem,
                 action: FilledButton.icon(
@@ -759,7 +796,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                     ? 'Belum ada data bahasa asing'
                     : 'Skor terbaik ${_languages.first.standardName} ${_languages.first.score}',
                 icon: Icons.translate_rounded,
-                accentColor: const Color(0xFF2F80ED),
+                accentColor: sectionAccent,
                 items: _languages,
                 itemBuilder: _buildLanguageItem,
                 action: FilledButton.icon(
@@ -775,7 +812,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                     ? 'Belum ada data softskill'
                     : '${_softskills.length} pelatihan, seminar, dan workshop pendukung',
                 icon: Icons.workspace_premium_rounded,
-                accentColor: const Color(0xFF34A853),
+                accentColor: sectionAccent,
                 items: _softskills,
                 itemBuilder: _buildSoftskillItem,
                 action: FilledButton.icon(
@@ -791,7 +828,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                     ? 'Belum ada data magang'
                     : '${_internships.length} pengalaman magang dan praktik kerja',
                 icon: Icons.business_center_rounded,
-                accentColor: const Color(0xFF7C4DFF),
+                accentColor: sectionAccent,
                 items: _internships,
                 itemBuilder: _buildInternshipItem,
                 action: FilledButton.icon(
@@ -807,7 +844,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                     ? 'Belum ada data penghargaan'
                     : '${_honors.length} penghargaan dan pencapaian akademik',
                 icon: Icons.emoji_events_rounded,
-                accentColor: const Color(0xFFF4B400),
+                accentColor: sectionAccent,
                 items: _honors,
                 itemBuilder: _buildHonorItem,
                 action: FilledButton.icon(
@@ -968,7 +1005,11 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
           ),
           title: Text(
             title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              color: AppThemePalette.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 6),
@@ -1027,9 +1068,9 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: _tintedSurface(const Color(0xFFFF7A59)),
+        color: _skpiExpandedItemBackground(),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _tintedBorder(const Color(0xFFFF7A59))),
+        border: Border.all(color: _skpiExpandedItemAccent()),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1040,8 +1081,8 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
               Container(
                 width: 34,
                 height: 34,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFF7A59),
+                decoration: BoxDecoration(
+                  color: _skpiExpandedItemAccent(),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -1064,14 +1105,14 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         height: 1.35,
-                        color: AppThemePalette.textPrimary,
+                        color: AppThemePalette.onPrimary(primaryBlue),
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       item.occupation,
-                      style: const TextStyle(
-                        color: Color(0xFFFF7A59),
+                      style: TextStyle(
+                        color: _skpiExpandedItemAccent(),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1117,7 +1158,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
       icon: const Icon(Icons.edit_rounded, size: 18),
       label: const Text('Edit Organisasi'),
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFFE66548),
+        foregroundColor: _skpiEditActionColor,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
@@ -1129,7 +1170,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
       icon: const Icon(Icons.delete_outline_rounded, size: 18),
       label: const Text('Hapus'),
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFFD14343),
+        foregroundColor: _skpiDeleteActionColor,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
@@ -1139,9 +1180,9 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: _tintedSurface(const Color(0xFF2F80ED)),
+        color: _skpiExpandedItemBackground(),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _tintedBorder(const Color(0xFF2F80ED))),
+        border: Border.all(color: _skpiExpandedItemAccent()),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1157,14 +1198,14 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppThemePalette.textPrimary,
+                        color: AppThemePalette.onPrimary(primaryBlue),
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       item.standardName,
-                      style: const TextStyle(
-                        color: Color(0xFF2F80ED),
+                      style: TextStyle(
+                        color: _skpiExpandedItemAccent(),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1177,7 +1218,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2F80ED),
+                  color: _skpiExpandedItemAccent(),
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Column(
@@ -1239,7 +1280,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
       icon: const Icon(Icons.edit_rounded, size: 18),
       label: const Text('Edit Bahasa'),
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFF2F80ED),
+        foregroundColor: _skpiEditActionColor,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
@@ -1251,7 +1292,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
       icon: const Icon(Icons.delete_outline_rounded, size: 18),
       label: const Text('Hapus'),
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFFD14343),
+        foregroundColor: _skpiDeleteActionColor,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
@@ -1261,9 +1302,9 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: _tintedSurface(const Color(0xFF34A853)),
+        color: _skpiExpandedItemBackground(),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _tintedBorder(const Color(0xFF34A853))),
+        border: Border.all(color: _skpiExpandedItemAccent()),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1281,14 +1322,14 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         height: 1.35,
-                        color: AppThemePalette.textPrimary,
+                        color: AppThemePalette.onPrimary(primaryBlue),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       item.givenBy,
-                      style: const TextStyle(
-                        color: Color(0xFF34A853),
+                      style: TextStyle(
+                        color: _skpiExpandedItemAccent(),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1302,7 +1343,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF34A853),
+                  color: _skpiExpandedItemAccent(),
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Column(
@@ -1364,7 +1405,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
       icon: const Icon(Icons.edit_rounded, size: 18),
       label: const Text('Edit Softskill'),
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFF34A853),
+        foregroundColor: _skpiEditActionColor,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
@@ -1376,7 +1417,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
       icon: const Icon(Icons.delete_outline_rounded, size: 18),
       label: const Text('Hapus'),
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFFD14343),
+        foregroundColor: _skpiDeleteActionColor,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
@@ -1386,9 +1427,9 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: _tintedSurface(const Color(0xFF7C4DFF)),
+        color: _skpiExpandedItemBackground(),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _tintedBorder(const Color(0xFF7C4DFF))),
+        border: Border.all(color: _skpiExpandedItemAccent()),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1406,14 +1447,14 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         height: 1.35,
-                        color: AppThemePalette.textPrimary,
+                        color: AppThemePalette.onPrimary(primaryBlue),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       item.displayPosition,
-                      style: const TextStyle(
-                        color: Color(0xFF7C4DFF),
+                      style: TextStyle(
+                        color: _skpiExpandedItemAccent(),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1425,7 +1466,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF7C4DFF),
+                  color: _skpiExpandedItemAccent(),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.center,
@@ -1477,7 +1518,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
       icon: const Icon(Icons.edit_rounded, size: 18),
       label: const Text('Edit Magang'),
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFF7C4DFF),
+        foregroundColor: _skpiEditActionColor,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
@@ -1489,7 +1530,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
       icon: const Icon(Icons.delete_outline_rounded, size: 18),
       label: const Text('Hapus'),
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFFD14343),
+        foregroundColor: _skpiDeleteActionColor,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
@@ -1499,9 +1540,9 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: _tintedSurface(const Color(0xFFF4B400)),
+        color: _skpiExpandedItemBackground(),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _tintedBorder(const Color(0xFFF4B400))),
+        border: Border.all(color: _skpiExpandedItemAccent()),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1519,14 +1560,14 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         height: 1.35,
-                        color: AppThemePalette.textPrimary,
+                        color: AppThemePalette.onPrimary(primaryBlue),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       item.givenBy,
-                      style: const TextStyle(
-                        color: Color(0xFFC58B00),
+                      style: TextStyle(
+                        color: _skpiExpandedItemAccent(),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1538,7 +1579,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF4B400),
+                  color: _skpiExpandedItemAccent(),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
@@ -1585,7 +1626,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
       icon: const Icon(Icons.edit_rounded, size: 18),
       label: const Text('Edit Penghargaan'),
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFFC58B00),
+        foregroundColor: _skpiEditActionColor,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
@@ -1597,7 +1638,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
       icon: const Icon(Icons.delete_outline_rounded, size: 18),
       label: const Text('Hapus'),
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFFD14343),
+        foregroundColor: _skpiDeleteActionColor,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
@@ -1632,8 +1673,8 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                   : const Icon(Icons.visibility_rounded, size: 18),
               label: Text(isLoading ? 'Membuka...' : 'Lihat Evidence'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: primaryBlue,
-                side: BorderSide(color: primaryBlue.withAlpha(90)),
+                foregroundColor: _skpiExpandedItemAccent(),
+                side: BorderSide(color: _skpiExpandedItemAccent()),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -1660,8 +1701,8 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                 : const Icon(Icons.upload_file_rounded, size: 18),
             label: Text(isUploading ? 'Mengunggah...' : 'Upload Evidence'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF1F7AE0),
-              side: const BorderSide(color: Color(0xFFBFD7FA)),
+              foregroundColor: _skpiExpandedItemAccent(),
+              side: BorderSide(color: _skpiExpandedItemAccent()),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
@@ -1677,16 +1718,16 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppThemePalette.surface,
+        color: _skpiExpandedItemAccent().withAlpha(34),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppThemePalette.divider),
+        border: Border.all(color: _skpiExpandedItemAccent()),
       ),
       child: Text(
         label,
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: AppThemePalette.textSecondary,
+          color: AppThemePalette.onPrimary(primaryBlue),
         ),
       ),
     );
@@ -3544,6 +3585,67 @@ class _SelectedSkpiEvidence {
   final String mime;
 
   const _SelectedSkpiEvidence({required this.bytes, required this.mime});
+}
+
+class _SkpiEvidenceSourceSheet extends StatelessWidget {
+  final ValueChanged<String> onSelect;
+
+  const _SkpiEvidenceSourceSheet({required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppThemePalette.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            _EvidenceSourceTile(
+              icon: Icons.camera_alt_rounded,
+              title: 'Ambil dari Kamera',
+              onTap: () => onSelect('camera'),
+            ),
+            _EvidenceSourceTile(
+              icon: Icons.photo_library_rounded,
+              title: 'Pilih dari Galeri',
+              onTap: () => onSelect('gallery'),
+            ),
+            _EvidenceSourceTile(
+              icon: Icons.picture_as_pdf_rounded,
+              title: 'Pilih File PDF',
+              onTap: () => onSelect('pdf'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EvidenceSourceTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _EvidenceSourceTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: AppThemePalette.negative()),
+      title: Text(title, style: TextStyle(color: AppThemePalette.textPrimary)),
+      onTap: onTap,
+    );
+  }
 }
 
 class _SkpiPdfPreviewPage extends StatelessWidget {

@@ -196,7 +196,7 @@ class _UserChatDetailPageState extends State<UserChatDetailPage> {
           ),
           CircleAvatar(
             radius: 22,
-            backgroundColor: AppThemePalette.surface,
+            backgroundColor: AppThemePalette.accentAvatar,
             child: Text(
               widget.contact.initials,
               style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w800),

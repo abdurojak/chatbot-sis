@@ -2,7 +2,13 @@ import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/models/krs_models.dart';
 import 'package:chatbot/services/krs_service.dart';
 import 'package:chatbot/services/session_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+@visibleForTesting
+Widget buildScheduleCourseCodeBadgeForTest(KrsEnrollment course) {
+  return _ScheduleCourseCodeBadge(course: course);
+}
 
 class JadwalKrsScreen extends StatefulWidget {
   final String idSemester;
@@ -14,6 +20,13 @@ class JadwalKrsScreen extends StatefulWidget {
 }
 
 class _JadwalKrsScreenState extends State<JadwalKrsScreen> {
+  static const double _timeColumnWidth = 80;
+  static const double _dayColumnWidth = 100;
+  static const double _headerHeight = 42;
+  static const double _rowHeight = 56;
+  static const double _scheduleTableWidth =
+      _timeColumnWidth + 6 * _dayColumnWidth;
+
   Color get primaryBlue => AppThemePalette.primary;
 
   bool _loading = true;
@@ -132,11 +145,23 @@ class _JadwalKrsScreenState extends State<JadwalKrsScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: AppThemePalette.background,
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (_error != null) {
-      return Scaffold(body: Center(child: Text(_error!)));
+      return Scaffold(
+        backgroundColor: AppThemePalette.background,
+        body: Center(
+          child: Text(
+            _error!,
+            style: TextStyle(color: AppThemePalette.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
     }
 
     final semesterLevel = semesters.length;
@@ -145,6 +170,7 @@ class _JadwalKrsScreenState extends State<JadwalKrsScreen> {
     );
 
     return Scaffold(
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Jadwal KRS'),
         backgroundColor: primaryBlue,
@@ -156,10 +182,15 @@ class _JadwalKrsScreenState extends State<JadwalKrsScreen> {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: AppThemePalette.surface,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: const [
-                BoxShadow(color: Colors.black26, blurRadius: 8),
+              border: Border.all(color: AppThemePalette.divider),
+              boxShadow: [
+                BoxShadow(
+                  color: AppThemePalette.shadow,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
               ],
             ),
             child: Column(
@@ -177,13 +208,17 @@ class _JadwalKrsScreenState extends State<JadwalKrsScreen> {
               ],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Schedule',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(
+                  color: AppThemePalette.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
@@ -191,35 +226,50 @@ class _JadwalKrsScreenState extends State<JadwalKrsScreen> {
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              child: SizedBox(
-                width: 700,
-                child: Column(
-                  children: [
-                    Row(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppThemePalette.divider),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: SizedBox(
+                    width: _scheduleTableWidth,
+                    child: Column(
                       children: [
-                        _headerCell('Time'),
-                        ...days.map((day) => _headerCell(day.substring(0, 3))),
+                        Row(
+                          children: [
+                            _headerCell('Time', width: _timeColumnWidth),
+                            ...days.map(
+                              (day) => _headerCell(
+                                day.substring(0, 3),
+                                width: _dayColumnWidth,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: timeSlots.length,
+                            itemBuilder: (context, index) {
+                              final time = timeSlots[index];
+
+                              return Row(
+                                children: [
+                                  _timeCell(time),
+                                  ...days.map((day) {
+                                    final course = getCourseForSlot(day, time);
+                                    return _courseCell(course);
+                                  }),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
                       ],
                     ),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: timeSlots.length,
-                        itemBuilder: (context, index) {
-                          final time = timeSlots[index];
-
-                          return Row(
-                            children: [
-                              _timeCell(time),
-                              ...days.map((day) {
-                                final course = getCourseForSlot(day, time);
-                                return _courseCell(course);
-                              }),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -234,68 +284,122 @@ class _JadwalKrsScreenState extends State<JadwalKrsScreen> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Expanded(child: Text(title)),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(color: AppThemePalette.textPrimary),
+            ),
+          ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: AppThemePalette.accentAvatar,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(value),
+            child: Text(
+              value,
+              style: TextStyle(
+                color: AppThemePalette.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _headerCell(String text) {
+  Widget _headerCell(String text, {required double width}) {
     return Container(
-      width: 100,
-      height: 40,
+      width: width,
+      height: _headerHeight,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: primaryBlue,
-        border: Border.all(color: Colors.white),
+        border: Border(
+          right: BorderSide(color: AppThemePalette.background),
+          bottom: BorderSide(color: AppThemePalette.background),
+        ),
       ),
-      child: Text(text, style: const TextStyle(color: Colors.white)),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: AppThemePalette.onPrimary(primaryBlue),
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 
   Widget _timeCell(String text) {
     return Container(
-      width: 80,
-      height: 50,
+      width: _timeColumnWidth,
+      height: _rowHeight,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Colors.grey.shade300,
-        border: Border.all(color: Colors.white),
+        color: AppThemePalette.surfaceAlt,
+        border: Border(
+          right: BorderSide(color: AppThemePalette.divider),
+          bottom: BorderSide(color: AppThemePalette.divider),
+        ),
       ),
-      child: Text(text),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: AppThemePalette.textSecondary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 
   Widget _courseCell(KrsEnrollment? course) {
-    if (course == null) {
-      return Container(
-        width: 100,
-        height: 50,
-        decoration: BoxDecoration(border: Border.all(color: Colors.white)),
-      );
-    }
-
     return Container(
-      width: 100,
-      height: 50,
+      width: _dayColumnWidth,
+      height: _rowHeight,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: primaryBlue,
+        color: AppThemePalette.surface,
+        border: Border(
+          right: BorderSide(color: AppThemePalette.divider),
+          bottom: BorderSide(color: AppThemePalette.divider),
+        ),
+      ),
+      child: course == null
+          ? null
+          : Padding(
+              padding: const EdgeInsets.all(4),
+              child: _ScheduleCourseCodeBadge(course: course),
+            ),
+    );
+  }
+}
+
+class _ScheduleCourseCodeBadge extends StatelessWidget {
+  final KrsEnrollment course;
+
+  const _ScheduleCourseCodeBadge({required this.course});
+
+  @override
+  Widget build(BuildContext context) {
+    final badgeColor = AppThemePalette.negative();
+
+    return Container(
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: badgeColor,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.white),
       ),
       child: Text(
         course.code,
-        style: const TextStyle(color: Colors.white, fontSize: 12),
+        style: TextStyle(
+          color: AppThemePalette.onPrimary(badgeColor),
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
         textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
