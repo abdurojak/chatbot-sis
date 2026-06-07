@@ -87,9 +87,10 @@ void main() {
 
     expect(
       skpiExpandedItemBackgroundForTest(),
-      AppThemePalette.primary.withAlpha(42),
+      AppThemePalette.negative().withAlpha(42),
     );
     expect(skpiExpandedItemAccentForTest(), AppThemePalette.negative());
+    expect(skpiExpandedItemTextColorForTest(), AppThemePalette.textPrimary);
     expect(skpiEditActionColorForTest(), const Color(0xFFF59E0B));
     expect(skpiDeleteActionColorForTest(), const Color(0xFFEF4444));
   });

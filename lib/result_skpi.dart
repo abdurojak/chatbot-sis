@@ -17,8 +17,9 @@ Color _skpiSectionAccentColor() => AppThemePalette.negative();
 Color _skpiDestructiveColor() =>
     AppThemePalette.isDark ? const Color(0xFF991B1B) : Colors.red;
 
-Color _skpiExpandedItemBackground() => AppThemePalette.primary.withAlpha(42);
+Color _skpiExpandedItemBackground() => AppThemePalette.negative().withAlpha(42);
 Color _skpiExpandedItemAccent() => AppThemePalette.negative();
+Color _skpiExpandedItemTextColor() => AppThemePalette.textPrimary;
 const Color _skpiEditActionColor = Color(0xFFF59E0B);
 const Color _skpiDeleteActionColor = Color(0xFFEF4444);
 
@@ -33,6 +34,9 @@ Color skpiExpandedItemBackgroundForTest() => _skpiExpandedItemBackground();
 
 @visibleForTesting
 Color skpiExpandedItemAccentForTest() => _skpiExpandedItemAccent();
+
+@visibleForTesting
+Color skpiExpandedItemTextColorForTest() => _skpiExpandedItemTextColor();
 
 @visibleForTesting
 Color skpiEditActionColorForTest() => _skpiEditActionColor;
@@ -1105,7 +1109,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         height: 1.35,
-                        color: AppThemePalette.onPrimary(primaryBlue),
+                        color: _skpiExpandedItemTextColor(),
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -1198,7 +1202,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppThemePalette.onPrimary(primaryBlue),
+                        color: _skpiExpandedItemTextColor(),
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -1322,7 +1326,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         height: 1.35,
-                        color: AppThemePalette.onPrimary(primaryBlue),
+                        color: _skpiExpandedItemTextColor(),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1447,7 +1451,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         height: 1.35,
-                        color: AppThemePalette.onPrimary(primaryBlue),
+                        color: _skpiExpandedItemTextColor(),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1560,7 +1564,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         height: 1.35,
-                        color: AppThemePalette.onPrimary(primaryBlue),
+                        color: _skpiExpandedItemTextColor(),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1727,7 +1731,7 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: AppThemePalette.onPrimary(primaryBlue),
+          color: _skpiExpandedItemTextColor(),
         ),
       ),
     );

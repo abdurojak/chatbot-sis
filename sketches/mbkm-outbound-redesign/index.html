@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup MBKM Outbound</title>
+  <style>
+    :root {
+      --primary: #1e73be;
+      --primary-dark: #14558d;
+      --surface: #ffffff;
+      --bg: #f5f8fc;
+      --soft: #eaf3fb;
+      --ink: #172033;
+      --muted: #64748b;
+      --line: #d8e4ef;
+      --green: #1f8a63;
+      --amber: #aa6a08;
+      --shadow: 0 18px 45px rgba(23, 32, 51, .12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+    }
+
+    .page {
+      padding: 32px;
+    }
+
+    .intro {
+      max-width: 1180px;
+      margin: 0 auto 22px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      letter-spacing: 0;
+    }
+
+    .intro p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 780px;
+    }
+
+    .canvas {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 380px minmax(560px, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .phone {
+      width: 360px;
+      padding: 10px;
+      background: #0d1422;
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+    }
+
+    .screen {
+      min-height: 780px;
+      overflow: hidden;
+      background: var(--bg);
+      border-radius: 22px;
+    }
+
+    .appbar {
+      background: linear-gradient(160deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      padding: 16px 18px 42px;
+    }
+
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .icon-button {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 17px;
+      background: rgba(255, 255, 255, .16);
+      font-size: 18px;
+    }
+
+    .hero-title {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin-bottom: 7px;
+    }
+
+    .hero-copy {
+      color: rgba(255, 255, 255, .78);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .identity {
+      position: relative;
+      margin: -24px 18px 10px;
+      padding: 12px;
+      border: 1px solid rgba(216, 228, 239, .9);
+      border-radius: 10px;
+      background: var(--surface);
+      box-shadow: 0 10px 24px rgba(23, 32, 51, .11);
+    }
+
+    .identity-head {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin-bottom: 0;
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      color: var(--primary);
+      background: var(--soft);
+      font-weight: 900;
+    }
+
+    .identity h3 {
+      margin: 0 0 3px;
+      font-size: 14px;
+    }
+
+    .identity p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .metric {
+      padding: 7px 8px;
+      border-radius: 8px;
+      background: var(--soft);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .content {
+      padding: 0 18px 18px;
+    }
+
+    .primary-action {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 12px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      box-shadow: 0 10px 18px rgba(30, 115, 190, .22);
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 14px 0 8px;
+      font-weight: 900;
+      font-size: 15px;
+    }
+
+    .section-title span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .app-card {
+      margin-bottom: 10px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      box-shadow: 0 8px 18px rgba(23, 32, 51, .06);
+    }
+
+    .card-main {
+      padding: 12px;
+      border-left: 4px solid var(--primary);
+    }
+
+    .chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .chip {
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--primary);
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .chip.good {
+      background: #e8f6f0;
+      color: var(--green);
+    }
+
+    .chip.warn {
+      background: #fff4df;
+      color: var(--amber);
+    }
+
+    .app-card h3 {
+      margin: 0 0 5px;
+      font-size: 14px;
+      line-height: 1.25;
+    }
+
+    .company {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .card-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .meta {
+      padding: 7px 8px;
+      border-radius: 8px;
+      background: #f8fafc;
+      border: 1px solid #edf2f7;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .meta b {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      padding: 10px 12px 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 8px;
+      font-size: 12px;
+      font-weight: 900;
+      color: #fff;
+      background: var(--primary);
+    }
+
+    .btn.secondary {
+      color: var(--primary);
+      background: var(--soft);
+      border: 1px solid #c6ddef;
+    }
+
+    .empty-state {
+      margin-top: 12px;
+      padding: 14px;
+      border: 1px dashed #b8cadc;
+      border-radius: 10px;
+      background: #fff;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .preview {
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .panel h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    .panel > p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .detail-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .detail-head {
+      padding: 18px;
+      background: linear-gradient(160deg, var(--primary), var(--primary-dark));
+      color: #fff;
+    }
+
+    .detail-head h3 {
+      margin: 10px 0 6px;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    .detail-head p {
+      margin: 0;
+      color: rgba(255, 255, 255, .75);
+    }
+
+    .detail-body {
+      padding: 18px;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .timeline-item {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .timeline-item b {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--ink);
+    }
+
+    .description {
+      padding: 14px;
+      border-radius: 8px;
+      background: var(--soft);
+      color: #344256;
+      line-height: 1.55;
+      font-size: 13px;
+    }
+
+    .competencies {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .competency {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .competency b {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--primary);
+    }
+
+    .detail-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    @media (max-width: 980px) {
+      .page {
+        padding: 18px;
+      }
+
+      .canvas {
+        grid-template-columns: 1fr;
+      }
+
+      .phone {
+        width: min(360px, 100%);
+      }
+
+      .timeline,
+      .competencies {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="intro">
+      <h1>Mockup Perbaikan MBKM Outbound</h1>
+      <p>Konsep ini membuat halaman outbound terasa seperti dashboard kerja mahasiswa: biodata dan ringkasan di atas, tombol pengajuan mudah ditemukan, dan tiap pengajuan tampil sebagai kartu yang bisa dipindai cepat sebelum dibuka detailnya.</p>
+    </section>
+
+    <section class="canvas">
+      <div class="phone">
+        <div class="screen">
+          <div class="appbar">
+            <div class="topline">
+              <div class="icon-button">&#8592;</div>
+              <div>MBKM Outbound</div>
+              <div class="icon-button">&#8635;</div>
+            </div>
+            <div class="hero-title">Outbound MBKM</div>
+          </div>
+
+          <div class="identity">
+            <div class="identity-head">
+              <div class="avatar">MA</div>
+              <div>
+                <h3>Mahasiswa Contoh</h3>
+                <p>064001900001</p>
+              </div>
+            </div>
+            <div class="metrics">
+              <div class="metric"><strong>2</strong><span>pengajuan</span></div>
+              <div class="metric"><strong>5</strong><span>kompetensi</span></div>
+              <div class="metric"><strong>8</strong><span>log</span></div>
+            </div>
+          </div>
+
+          <div class="content">
+            <button class="primary-action">+ Ajukan MBKM</button>
+
+            <div class="section-title">
+              <div>Daftar Pengajuan</div>
+              <span>Tarik untuk muat ulang</span>
+            </div>
+
+            <article class="app-card">
+              <div class="card-main">
+                <div class="chips">
+                  <span class="chip">Magang</span>
+                  <span class="chip">Nasional</span>
+                  <span class="chip good">Aktif</span>
+                </div>
+                <h3>Frontend Engineer Internship</h3>
+                <div class="company">PT Mitra Digital Indonesia</div>
+                <div class="card-meta">
+                  <div class="meta"><b>Periode</b>01 Feb - 30 Jun</div>
+                  <div class="meta"><b>Mentor</b>Dr. Andi Saputra</div>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="btn secondary">Lihat Log</button>
+                <button class="btn">Detail</button>
+              </div>
+            </article>
+
+            <article class="app-card">
+              <div class="card-main">
+                <div class="chips">
+                  <span class="chip">Studi Independen</span>
+                  <span class="chip">Lokal</span>
+                  <span class="chip warn">Menunggu</span>
+                </div>
+                <h3>Data Analytics Bootcamp</h3>
+                <div class="company">Kampus Merdeka Partner</div>
+                <div class="card-meta">
+                  <div class="meta"><b>Periode</b>10 Agu - 20 Des</div>
+                  <div class="meta"><b>Mentor</b>-</div>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="btn secondary">Lihat Log</button>
+                <button class="btn">Detail</button>
+              </div>
+            </article>
+
+            <div class="empty-state">Saat data kosong, tampilkan ajakan ringkas untuk mulai pengajuan, bukan hanya teks kosong.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview">
+        <section class="panel">
+          <h2>Detail Expanded</h2>
+          <p>Detail kartu tidak perlu memenuhi layar utama. Ia dibuka saat mahasiswa butuh melihat jadwal seleksi, deskripsi, kompetensi, dan aksi tambahan.</p>
+
+          <div class="detail-card">
+            <div class="detail-head">
+              <div class="chips">
+                <span class="chip">Magang</span>
+                <span class="chip">Nasional</span>
+                <span class="chip good">Aktif</span>
+              </div>
+              <h3>Frontend Engineer Internship</h3>
+              <p>PT Mitra Digital Indonesia - Mentor: Dr. Andi Saputra</p>
+            </div>
+            <div class="detail-body">
+              <div class="timeline">
+                <div class="timeline-item"><b>Semester</b>Genap 2025/2026</div>
+                <div class="timeline-item"><b>Program</b>01 Feb - 30 Jun</div>
+                <div class="timeline-item"><b>Seleksi</b>20 Jan 2026</div>
+                <div class="timeline-item"><b>Hasil</b>25 Jan 2026</div>
+              </div>
+
+              <div class="description">
+                Mahasiswa mengikuti program magang untuk membangun antarmuka aplikasi, berkolaborasi dengan tim produk, dan menyusun laporan kegiatan secara berkala.
+              </div>
+
+              <div class="competencies">
+                <div class="competency"><b>UI Implementation</b>Sumber: Project sprint. Asesmen: Review mentor. Durasi: 120 jam.</div>
+                <div class="competency"><b>Team Collaboration</b>Sumber: Daily standup. Asesmen: Evaluasi performa. Durasi: 80 jam.</div>
+              </div>
+
+              <div class="detail-actions">
+                <button class="btn secondary">Tambah Kompetensi</button>
+                <button class="btn secondary">Buka Link</button>
+                <button class="btn">Lihat Log</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

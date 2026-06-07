@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup Kartu Peserta Ujian</title>
+  <style>
+    :root {
+      --primary: #1e73be;
+      --primary-dark: #155489;
+      --soft: #eaf3fb;
+      --surface: #ffffff;
+      --ink: #172033;
+      --muted: #617086;
+      --line: #d9e4ef;
+      --danger: #d64a4a;
+      --ok: #2f8f68;
+      --shadow: 0 18px 45px rgba(23, 32, 51, .12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: #f4f7fb;
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 32px;
+    }
+
+    .intro {
+      max-width: 1180px;
+      margin: 0 auto 22px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      letter-spacing: 0;
+    }
+
+    .intro p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 760px;
+      line-height: 1.55;
+    }
+
+    .canvas {
+      display: grid;
+      grid-template-columns: 380px minmax(560px, 1fr);
+      gap: 24px;
+      max-width: 1180px;
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    .phone {
+      width: 360px;
+      border-radius: 30px;
+      background: #0d1422;
+      padding: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .screen {
+      overflow: hidden;
+      border-radius: 22px;
+      background: #f7f9fc;
+      min-height: 760px;
+    }
+
+    .appbar {
+      background: linear-gradient(160deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      padding: 18px 18px 76px;
+      position: relative;
+    }
+
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .icon-button {
+      width: 34px;
+      height: 34px;
+      border-radius: 17px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, .16);
+      font-size: 18px;
+    }
+
+    .hero-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 7px;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      color: rgba(255, 255, 255, .78);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .summary {
+      margin: -48px 18px 14px;
+      background: var(--surface);
+      border: 1px solid rgba(217, 228, 239, .85);
+      border-radius: 12px;
+      padding: 14px;
+      position: relative;
+      box-shadow: 0 10px 24px rgba(23, 32, 51, .12);
+    }
+
+    .summary-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric {
+      border-radius: 8px;
+      background: var(--soft);
+      padding: 10px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 5px;
+    }
+
+    .section-title {
+      padding: 0 18px 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #263447;
+    }
+
+    .exam-card {
+      margin: 0 18px 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 18px rgba(23, 32, 51, .06);
+    }
+
+    .card-band {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 13px 14px;
+      border-left: 4px solid var(--primary);
+    }
+
+    .card-band h3 {
+      margin: 0 0 4px;
+      font-size: 14px;
+    }
+
+    .card-band p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .badge {
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: #e9f7f0;
+      color: var(--ok);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 0 14px 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .details b {
+      color: var(--ink);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      padding: 12px 14px 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      background: var(--primary);
+    }
+
+    .btn.secondary {
+      color: var(--primary);
+      background: var(--soft);
+      border: 1px solid #c9def0;
+    }
+
+    .empty {
+      margin: 12px 18px;
+      padding: 18px;
+      border: 1px dashed #b9cbe0;
+      border-radius: 10px;
+      background: #fff;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .pdf-wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .pdf {
+      width: 100%;
+      background: white;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 34px;
+      aspect-ratio: 1 / 1.414;
+      min-height: 780px;
+    }
+
+    .pdf-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 2px solid #1a1a1a;
+      padding-bottom: 12px;
+    }
+
+    .logo {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 2px solid #111;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 18px;
+    }
+
+    .pdf-header h2 {
+      margin: 0 0 3px;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    .pdf-header p {
+      margin: 1px 0;
+      font-size: 9px;
+      color: #333;
+    }
+
+    .pdf-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 18px 0 14px;
+    }
+
+    .pdf-title h3 {
+      margin: 0;
+      text-transform: uppercase;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    .pdf-title span {
+      border: 1px solid #111;
+      padding: 5px 8px;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .student-box {
+      display: grid;
+      grid-template-columns: 95px 1fr;
+      border: 1px solid #111;
+      margin-bottom: 18px;
+    }
+
+    .photo {
+      min-height: 118px;
+      border-right: 1px solid #111;
+      background: linear-gradient(145deg, #f0f0f0, #fff);
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      color: #555;
+      font-weight: 700;
+    }
+
+    .identity {
+      padding: 11px 13px;
+      display: grid;
+      gap: 7px;
+      font-size: 11px;
+    }
+
+    .identity div {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 8px;
+    }
+
+    .identity b {
+      font-weight: 800;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9px;
+    }
+
+    th {
+      background: #eef3f8;
+      border: 1px solid #111;
+      padding: 7px 5px;
+      text-align: left;
+    }
+
+    td {
+      border: 1px solid #111;
+      padding: 7px 5px;
+      vertical-align: top;
+    }
+
+    .qr-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .qr-card {
+      border: 1px solid #111;
+      padding: 7px;
+      min-height: 118px;
+      text-align: center;
+      font-size: 8px;
+    }
+
+    .qr {
+      width: 54px;
+      height: 54px;
+      margin: 0 auto 6px;
+      background:
+        linear-gradient(90deg, #111 8px, transparent 8px) 0 0 / 16px 16px,
+        linear-gradient(#111 8px, transparent 8px) 0 0 / 16px 16px,
+        #fff;
+      border: 4px solid #111;
+    }
+
+    .signature {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 26px;
+      font-size: 10px;
+    }
+
+    .signature div {
+      width: 190px;
+      text-align: center;
+    }
+
+    .line {
+      margin-top: 56px;
+      border-top: 1px solid #111;
+      padding-top: 5px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 980px) {
+      .page {
+        padding: 18px;
+      }
+
+      .canvas {
+        grid-template-columns: 1fr;
+      }
+
+      .phone {
+        width: min(360px, 100%);
+      }
+
+      .pdf {
+        overflow: auto;
+        min-height: 680px;
+        padding: 22px;
+      }
+
+      .qr-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="intro">
+      <h1>Mockup Perbaikan Kartu Peserta Ujian</h1>
+      <p>Konsep ini memperbaiki dua sisi sekaligus: halaman aplikasi dibuat berbasis kartu agar mudah dipindai di mobile, sementara PDF dibuat lebih formal, padat, dan siap cetak.</p>
+    </section>
+
+    <section class="canvas">
+      <div class="phone">
+        <div class="screen">
+          <div class="appbar">
+            <div class="topline">
+              <div class="icon-button">&#8592;</div>
+              <div>Kartu Ujian</div>
+              <div class="icon-button">&#8635;</div>
+            </div>
+            <div class="hero-title">Kartu Peserta Ujian</div>
+            <div class="hero-copy">Pilih periode ujian, lalu unduh kartu atau halaman QR sesuai kebutuhan pengawas.</div>
+          </div>
+
+          <div class="summary">
+            <div class="summary-row">
+              <div class="metric">
+                <strong>2</strong>
+                <span>periode tersedia</span>
+              </div>
+              <div class="metric">
+                <strong>12</strong>
+                <span>mata kuliah</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-title">Periode Ujian</div>
+
+          <article class="exam-card">
+            <div class="card-band">
+              <div>
+                <h3>UTS Semester Genap</h3>
+                <p>2025/2026 - Reguler</p>
+              </div>
+              <span class="badge">Siap</span>
+            </div>
+            <div class="details">
+              <div><b>Jadwal</b>8 mata kuliah</div>
+              <div><b>Mulai</b>16 Mar 2026</div>
+            </div>
+            <div class="actions">
+              <button class="btn">Kartu PDF</button>
+              <button class="btn secondary">QR Ujian</button>
+            </div>
+          </article>
+
+          <article class="exam-card">
+            <div class="card-band">
+              <div>
+                <h3>UAS Semester Ganjil</h3>
+                <p>2025/2026 - Reguler</p>
+              </div>
+              <span class="badge">Siap</span>
+            </div>
+            <div class="details">
+              <div><b>Jadwal</b>4 mata kuliah</div>
+              <div><b>Mulai</b>20 Jan 2026</div>
+            </div>
+            <div class="actions">
+              <button class="btn">Kartu PDF</button>
+              <button class="btn secondary">QR Ujian</button>
+            </div>
+          </article>
+
+          <div class="empty">Jika data kosong, tampilkan pesan ramah dan tombol muat ulang, bukan tabel kosong.</div>
+        </div>
+      </div>
+
+      <div class="pdf-wrap">
+        <section class="pdf">
+          <div class="pdf-header">
+            <div class="logo">UT</div>
+            <div>
+              <h2>FAKULTAS TEKNOLOGI INDUSTRI</h2>
+              <h2>UNIVERSITAS TRISAKTI</h2>
+              <p>Kampus A, Gedung F&G Lt. 4 Kabag TU FTI</p>
+              <p>Telp: 62-21-5663232, Email: fti@trisakti.ac.id</p>
+            </div>
+          </div>
+
+          <div class="pdf-title">
+            <h3>Kartu Peserta Ujian</h3>
+            <span>UTS GENAP 2025/2026</span>
+          </div>
+
+          <div class="student-box">
+            <div class="photo">FOTO</div>
+            <div class="identity">
+              <div><b>NIM</b><span>: 064001900001</span></div>
+              <div><b>Nama</b><span>: Mahasiswa Contoh</span></div>
+              <div><b>Program Studi</b><span>: Teknik Informatika</span></div>
+              <div><b>Periode</b><span>: UTS Semester Genap 2025/2026</span></div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Kode</th>
+                <th>Mata Kuliah</th>
+                <th>SKS</th>
+                <th>Tanggal</th>
+                <th>Waktu</th>
+                <th>Ruang</th>
+                <th>TTD</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>IF101</td>
+                <td>Basis Data</td>
+                <td>3</td>
+                <td>16 Mar 2026</td>
+                <td>08:00</td>
+                <td>F-401</td>
+                <td></td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>IF203</td>
+                <td>Pemrograman Mobile</td>
+                <td>3</td>
+                <td>18 Mar 2026</td>
+                <td>10:00</td>
+                <td>F-502</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="qr-grid">
+            <div class="qr-card"><div class="qr"></div><b>IF101</b><br>Basis Data<br>16 Mar 2026 - F401</div>
+            <div class="qr-card"><div class="qr"></div><b>IF203</b><br>Pemrograman Mobile<br>18 Mar 2026 - F502</div>
+            <div class="qr-card"><div class="qr"></div><b>IF302</b><br>Jaringan Komputer<br>20 Mar 2026 - F303</div>
+            <div class="qr-card"><div class="qr"></div><b>IF410</b><br>Keamanan Informasi<br>22 Mar 2026 - F604</div>
+          </div>
+
+          <div class="signature">
+            <div>
+              Jakarta, 16 Maret 2026
+              <div class="line">Petugas Akademik</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

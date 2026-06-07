@@ -34,7 +34,7 @@ class InvoiceService {
     final responses = await Future.wait([
       _post('/get-invoice', body: {'IdLogin': idLogin, 'token': token}),
       _post('/get-payment', body: {'IdLogin': idLogin, 'token': token}),
-      _post('/cek-open-invoice', body: {'IdLogin': idLogin, 'token': token}),
+      _post('/is-any-open-invoice', body: {'IdLogin': idLogin, 'token': token}),
     ]);
 
     final invoiceResponse = responses[0];
