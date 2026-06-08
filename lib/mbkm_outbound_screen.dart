@@ -8,7 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MbkmOutboundPage extends StatefulWidget {
-  const MbkmOutboundPage({super.key});
+  const MbkmOutboundPage({
+    super.key,
+    this.initialData,
+    this.skipInitialLoad = false,
+  });
+
+  final MbkmResponseData? initialData;
+  final bool skipInitialLoad;
 
   @override
   State<MbkmOutboundPage> createState() => _MbkmOutboundPageState();
@@ -21,13 +28,18 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
   final Set<String> _expandedApplicationIds = <String>{};
 
   Color get primaryBlue => AppThemePalette.primary;
-  Color get subtleText => Colors.grey.shade700;
-  Color get mutedText => Colors.grey.shade800;
+  Color get subtleText => AppThemePalette.textSecondary;
+  Color get mutedText => AppThemePalette.textPrimary;
 
   @override
   void initState() {
     super.initState();
-    _loadMbkm();
+    _data = widget.initialData;
+    if (widget.skipInitialLoad) {
+      _isLoading = false;
+    } else {
+      _loadMbkm();
+    }
   }
 
   Future<void> _loadMbkm() async {
@@ -180,7 +192,7 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
                           width: 42,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
+                            color: AppThemePalette.divider,
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
@@ -197,7 +209,7 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
                       const SizedBox(height: 6),
                       Text(
                         item.title,
-                        style: const TextStyle(color: Colors.grey),
+                        style: TextStyle(color: AppThemePalette.textSecondary),
                       ),
                       const SizedBox(height: 16),
                       _buildInputField(
@@ -236,16 +248,16 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
                           onPressed: isSubmitting ? null : submit,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryBlue,
-                            foregroundColor: Colors.white,
+                            foregroundColor: AppThemePalette.onPrimary(),
                             minimumSize: const Size.fromHeight(48),
                           ),
                           child: isSubmitting
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Colors.white,
+                                    color: AppThemePalette.onPrimary(),
                                   ),
                                 )
                               : const Text('Simpan Kompetensi'),
@@ -283,68 +295,49 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
         backgroundColor: primaryBlue,
         foregroundColor: Colors.white,
       ),
+      backgroundColor: AppThemePalette.background,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? _buildLoadingState()
           : _error != null
-          ? Center(child: Text(_error!))
+          ? _buildErrorState(_error!)
           : RefreshIndicator(
               onRefresh: _loadMbkm,
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  if (biodata != null) _buildBiodataCard(biodata),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        final submitted = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const MbkmApplyPage(),
+                  // _buildCompactHeader(),
+                  if (biodata != null) ...[
+                    const SizedBox(height: 10),
+                    _buildStudentSummary(biodata, applications),
+                  ],
+                  const SizedBox(height: 12),
+                  _buildApplyButton(),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Daftar Pengajuan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppThemePalette.textPrimary,
                           ),
-                        );
-
-                        if (submitted == true) {
-                          await _loadMbkm();
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryBlue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      icon: const Icon(Icons.add_circle_outline),
-                      label: const Text('Ajukan MBKM'),
-                    ),
+                      Text(
+                        'Tarik untuk muat ulang',
+                        style: TextStyle(
+                          color: AppThemePalette.textTertiary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 18),
-                  Text(
-                    'Daftar Pengajuan',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: primaryBlue,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   if (applications.isEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: primaryBlue.withAlpha(18)),
-                      ),
-                      child: Text(
-                        'Belum ada data MBKM',
-                        style: TextStyle(color: subtleText),
-                      ),
-                    )
+                    _buildEmptyState()
                   else
                     ...applications.map(_buildApplicationCard),
                 ],
@@ -353,25 +346,290 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
     );
   }
 
-  Widget _buildBiodataCard(MbkmBiodata biodata) {
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(color: primaryBlue),
+          const SizedBox(height: 14),
+          Text(
+            'Memuat data MBKM...',
+            style: TextStyle(color: AppThemePalette.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.wifi_off_rounded,
+              size: 50,
+              color: AppThemePalette.textTertiary,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Gagal memuat MBKM',
+              style: TextStyle(
+                color: AppThemePalette.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppThemePalette.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadMbkm,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Muat Ulang'),
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactHeader() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: primaryBlue.withAlpha(70)),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [primaryBlue.withAlpha(235), AppThemePalette.dark(0.12)],
+        ),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: AppThemePalette.shadow,
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.language_rounded, color: Colors.white),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Outbound MBKM',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStudentSummary(
+    MbkmBiodata biodata,
+    List<MbkmApplication> applications,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppThemePalette.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppThemePalette.divider),
+        boxShadow: [
+          BoxShadow(
+            color: AppThemePalette.shadow,
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 19,
+                backgroundColor: AppThemePalette.soft(0.86),
+                child: Text(
+                  _initials(biodata.name),
+                  style: TextStyle(
+                    color: primaryBlue,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      biodata.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppThemePalette.textPrimary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      biodata.nim,
+                      style: TextStyle(
+                        color: AppThemePalette.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _summaryMetric(
+                  value: applications.length.toString(),
+                  label: 'pengajuan',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _summaryMetric(
+                  value: _competencyCount(applications).toString(),
+                  label: 'kompetensi',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _summaryMetric(value: '-', label: 'log'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryMetric({required String value, required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppThemePalette.soft(0.9),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Biodata Mahasiswa',
-            style: TextStyle(fontWeight: FontWeight.bold, color: primaryBlue),
+            value,
+            style: TextStyle(
+              color: AppThemePalette.textPrimary,
+              fontWeight: FontWeight.w900,
+              fontSize: 17,
+            ),
           ),
-          const SizedBox(height: 12),
-          _infoRow('Nama', biodata.name),
-          _infoRow('NIM', biodata.nim),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppThemePalette.textSecondary,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApplyButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () async {
+          final submitted = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(builder: (_) => const MbkmApplyPage()),
+          );
+
+          if (submitted == true) {
+            await _loadMbkm();
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue,
+          foregroundColor: AppThemePalette.onPrimary(),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        icon: const Icon(Icons.add_circle_outline),
+        label: const Text(
+          'Ajukan MBKM',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppThemePalette.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppThemePalette.divider),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.assignment_outlined,
+            color: AppThemePalette.textTertiary,
+            size: 42,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Belum ada pengajuan MBKM',
+            style: TextStyle(
+              color: AppThemePalette.textPrimary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Mulai pengajuan baru saat kamu sudah memiliki program outbound.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppThemePalette.textSecondary,
+              fontSize: 12,
+              height: 1.35,
+            ),
+          ),
         ],
       ),
     );
@@ -381,129 +639,138 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
     final isExpanded = _expandedApplicationIds.contains(item.idApplication);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: primaryBlue.withAlpha(38)),
-        boxShadow: const [
+        color: AppThemePalette.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppThemePalette.divider),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 18,
-            offset: Offset(0, 8),
+            color: AppThemePalette.shadow,
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(24),
-              onTap: () => _toggleApplication(item.idApplication),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      primaryBlue.withAlpha(242),
-                      AppThemePalette.dark(0.08),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.vertical(
-                    top: const Radius.circular(24),
-                    bottom: Radius.circular(isExpanded ? 0 : 24),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 4,
+                  height: 74,
+                  decoration: BoxDecoration(
+                    color: primaryBlue,
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
                         children: [
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: [
-                              _chip(item.activityType, filled: true),
-                              _chip(item.scaleName, filled: true),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            item.title,
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              height: 1.25,
+                          _chip(item.activityType),
+                          _chip(item.scaleName),
+                          _statusChip(item),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        item.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppThemePalette.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.companyName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppThemePalette.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _compactInfo(
+                              label: 'Periode',
+                              value: _periodText(item),
+                              icon: Icons.event_outlined,
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            item.companyName,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _compactInfo(
+                              label: 'Mentor',
+                              value: item.internalMentorName,
+                              icon: Icons.person_outline_rounded,
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Mentor',
-                                style: TextStyle(
-                                  color: Colors.white.withAlpha(205),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  item.internalMentorName,
-                                  style: TextStyle(
-                                    color: Colors.white.withAlpha(235),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.35,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(24),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white24),
-                      ),
-                      child: AnimatedRotation(
-                        turns: isExpanded ? 0.5 : 0,
-                        duration: const Duration(milliseconds: 220),
-                        child: const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: AppThemePalette.divider),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _openLog(item),
+                    icon: const Icon(Icons.history, size: 16),
+                    label: const Text('Lihat Log'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: primaryBlue,
+                      side: BorderSide(color: primaryBlue.withAlpha(70)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _toggleApplication(item.idApplication),
+                    icon: AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: const Icon(Icons.keyboard_arrow_down_rounded),
+                    ),
+                    label: const Text('Detail'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryBlue,
+                      foregroundColor: AppThemePalette.onPrimary(),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           AnimatedCrossFade(
@@ -513,7 +780,7 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
               children: [
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
                   decoration: BoxDecoration(
                     color: AppThemePalette.soft(0.95),
                     border: Border(
@@ -558,7 +825,7 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -594,17 +861,7 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
                             label: const Text('Tambah Kompetensi'),
                           ),
                           OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => MbkmLogPage(
-                                    idMa: item.idApplication,
-                                    title: item.title,
-                                  ),
-                                ),
-                              );
-                            },
+                            onPressed: () => _openLog(item),
                             icon: const Icon(Icons.history, size: 16),
                             label: const Text('Lihat Log'),
                           ),
@@ -661,9 +918,9 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
   Widget _buildCompetencySection(List<MbkmCompetency> competencies) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: primaryBlue.withAlpha(22)),
+        border: Border.all(color: AppThemePalette.divider),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -695,22 +952,95 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
     );
   }
 
+  Widget _compactInfo({
+    required String label,
+    required String value,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppThemePalette.surfaceAlt,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppThemePalette.divider),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: AppThemePalette.textSecondary),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: AppThemePalette.textTertiary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppThemePalette.textPrimary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statusChip(MbkmApplication item) {
+    final hasMentor =
+        item.internalMentorName.trim().isNotEmpty &&
+        item.internalMentorName.trim() != '-';
+    final color = hasMentor ? const Color(0xFF1F8A63) : const Color(0xFFAA6A08);
+    final background = Color.lerp(color, AppThemePalette.surface, 0.86)!;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        hasMentor ? 'Aktif' : 'Menunggu',
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
   Widget _chip(String text, {bool filled = false}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: filled ? Colors.white.withAlpha(28) : primaryBlue.withAlpha(18),
-        borderRadius: BorderRadius.circular(20),
+        color: filled ? Colors.white.withAlpha(28) : AppThemePalette.soft(0.88),
+        borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: filled ? Colors.white24 : primaryBlue.withAlpha(38),
         ),
       ),
       child: Text(
         text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: filled ? Colors.white : primaryBlue,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
@@ -720,9 +1050,9 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: primaryBlue.withAlpha(24)),
+        border: Border.all(color: AppThemePalette.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -794,5 +1124,38 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
+  }
+
+  void _openLog(MbkmApplication item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            MbkmLogPage(idMa: item.idApplication, title: item.title),
+      ),
+    );
+  }
+
+  int _competencyCount(List<MbkmApplication> applications) {
+    return applications.fold<int>(
+      0,
+      (total, item) => total + item.competencies.length,
+    );
+  }
+
+  String _periodText(MbkmApplication item) {
+    return '${item.startDate} - ${item.endDate}';
+  }
+
+  String _initials(String name) {
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return 'MB';
+    if (parts.length == 1) return parts.first.characters.first.toUpperCase();
+    return '${parts.first.characters.first}${parts.last.characters.first}'
+        .toUpperCase();
   }
 }

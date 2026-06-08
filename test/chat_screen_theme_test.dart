@@ -73,4 +73,23 @@ void main() {
     final text = tester.widget<Text>(find.text('Hasil KRS'));
     expect(text.style?.color, Colors.white);
   });
+
+  testWidgets('anonymous chatbot sender stays stable while page is open', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+
+    await tester.pumpWidget(const MaterialApp(home: ChatDetailPage()));
+    await tester.pump();
+
+    final state = tester.state<ChatDetailPageState>(
+      find.byType(ChatDetailPage),
+    );
+
+    final firstSender = state.senderIdentifierForTest;
+    final secondSender = state.senderIdentifierForTest;
+
+    expect(firstSender, isNotEmpty);
+    expect(secondSender, firstSender);
+  });
 }

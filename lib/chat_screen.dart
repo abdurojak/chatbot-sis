@@ -28,6 +28,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
 
   final TextEditingController _controller = TextEditingController();
   final String senderId = "test_user";
+  late final String _anonymousSenderId = _createAnonymousSenderId();
   String? _idLogin;
 
   final ScrollController _scrollController = ScrollController();
@@ -172,9 +173,16 @@ class ChatDetailPageState extends State<ChatDetailPage> {
       return idLogin;
     }
 
-    final now = DateTime.now().toIso8601String();
-    return sha1.convert(utf8.encode(now)).toString();
+    return _anonymousSenderId;
   }
+
+  String _createAnonymousSenderId() {
+    final now = DateTime.now().toIso8601String();
+    return 'guest_${sha1.convert(utf8.encode(now)).toString()}';
+  }
+
+  @visibleForTesting
+  String get senderIdentifierForTest => _senderIdentifier;
 
   Widget _botMenuFromApi(List buttons) {
     return Align(
