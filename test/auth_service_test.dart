@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:chatbot/component/authentication.dart';
+import 'package:chatbot/models/auth_models.dart';
 import 'package:chatbot/services/auth_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('AuthService', () {
@@ -28,6 +31,7 @@ void main() {
             'IdLogin': '214908',
             'userid': '214908',
             'nim': '214908',
+            'stdname': 'AHMAD  ARDIANSYAH',
             'id_otp': 'otp-id',
             'Active': '1',
           },
@@ -41,6 +45,7 @@ void main() {
         );
 
         expect(result.isSuccess, isTrue);
+        expect(result.session?.studentName, 'AHMAD  ARDIANSYAH');
         expect(result.session?.role, 'STD');
         expect(client.paths, ['/api/login', '/api/get-role']);
         expect(client.requestBodies[1], {'IdLogin': '214908'});
@@ -69,6 +74,26 @@ void main() {
       expect(result.isSuccess, isTrue);
       expect(result.session?.role, isNull);
       expect(client.paths, ['/api/login', '/api/get-role']);
+    });
+
+    test('AuthStorage stores and loads student name', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      await AuthStorage.saveSession(
+        const AuthSession(
+          token: 'token',
+          idLogin: '241150',
+          userId: 'U-241150',
+          nim: '064102400002',
+          studentName: 'AHMAD  ARDIANSYAH',
+        ),
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      final session = await AuthStorage.loadSession();
+
+      expect(prefs.getString('stdname'), 'AHMAD  ARDIANSYAH');
+      expect(session?.studentName, 'AHMAD  ARDIANSYAH');
     });
   });
 }

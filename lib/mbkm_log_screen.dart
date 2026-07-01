@@ -761,7 +761,7 @@ class _MbkmLogPageState extends State<MbkmLogPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Log MBKM'),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
       floatingActionButton: FloatingActionButton.extended(

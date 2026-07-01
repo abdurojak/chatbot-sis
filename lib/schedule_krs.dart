@@ -2,7 +2,6 @@ import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/models/krs_models.dart';
 import 'package:chatbot/services/krs_service.dart';
 import 'package:chatbot/services/session_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 @visibleForTesting
@@ -173,7 +172,7 @@ class _JadwalKrsScreenState extends State<JadwalKrsScreen> {
       backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Jadwal KRS'),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
       body: Column(

@@ -41,6 +41,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   String get _otpCode =>
       _controllers.map((controller) => controller.text.trim()).join();
 
+  void _submitOtpFromKeyboard() {
+    if (_isLoading) {
+      return;
+    }
+
+    _verifyOtp();
+  }
+
   Future<void> _verifyOtp() async {
     if (_otpCode.length != otpLength) {
       _showMessage('Kode OTP belum lengkap');
@@ -79,88 +87,105 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(gradient: AppThemePalette.screenGradient()),
         child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 40),
-              Image.asset(
-                'assets/images/logo_trisakti.png',
-                width: 120,
-                color: Colors.white,
-              ),
-              const SizedBox(height: 40),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        AppThemePalette.soft(0.35),
-                        AppThemePalette.soft(0.78),
-                      ],
-                    ),
-                  ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.only(bottom: 24 + keyboardInset),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'OTP Verification',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppThemePalette.dark(0.45),
-                        ),
+                      const SizedBox(height: 40),
+                      Image.asset(
+                        'assets/images/logo_trisakti.png',
+                        width: 120,
+                        color: Colors.white,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Masukkan kode OTP yang dikirim ke email kamu',
-                        style: TextStyle(color: AppThemePalette.textPrimary),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(
-                          otpLength,
-                          (index) => _otpBox(index),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppThemePalette.dark(0.35),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                      const SizedBox(height: 40),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                AppThemePalette.soft(0.35),
+                                AppThemePalette.soft(0.78),
+                              ],
                             ),
                           ),
-                          onPressed: _isLoading ? null : _verifyOtp,
-                          child: _isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : const Text(
-                                  'Confirm',
-                                  style: TextStyle(fontSize: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'OTP Verification',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppThemePalette.primary,
                                 ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Masukkan kode OTP yang dikirim ke whatsapp kamu',
+                                style: TextStyle(
+                                  color: AppThemePalette.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: List.generate(
+                                  otpLength,
+                                  (index) => _otpBox(index),
+                                ),
+                              ),
+                              const SizedBox(height: 32),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 48,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppThemePalette.dark(0.35),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  onPressed: _isLoading ? null : _verifyOtp,
+                                  child: _isLoading
+                                      ? const CircularProgressIndicator(
+                                          color: Colors.white,
+                                        )
+                                      : const Text(
+                                          'Confirm',
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),
@@ -176,7 +201,18 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         focusNode: _focusNodes[index],
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
+        textInputAction: index == otpLength - 1
+            ? TextInputAction.done
+            : TextInputAction.next,
         maxLength: 1,
+        onSubmitted: (_) {
+          if (index == otpLength - 1) {
+            _submitOtpFromKeyboard();
+            return;
+          }
+
+          FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
+        },
         onChanged: (value) {
           if (value.isNotEmpty && index < otpLength - 1) {
             FocusScope.of(context).requestFocus(_focusNodes[index + 1]);

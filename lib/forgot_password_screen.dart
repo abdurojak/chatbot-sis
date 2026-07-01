@@ -13,78 +13,89 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _obscurePassword = true;
 
   @override
+  void dispose() {
+    _dateController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(gradient: AppThemePalette.screenGradient()),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: EdgeInsets.only(bottom: 24 + keyboardInset),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
+                  const SizedBox(height: 40),
 
-                // Logo
-                Image.asset(
-                  'assets/images/logo_trisakti.png',
-                  width: 150,
-                  color: Colors.white,
-                ),
+                  Image.asset(
+                    'assets/images/logo_trisakti.png',
+                    width: 150,
+                    color: Colors.white,
+                  ),
 
-                const SizedBox(height: 50),
+                  const SizedBox(height: 50),
 
-                _inputField(hint: 'Email'),
+                  _inputField(hint: 'Email'),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                _dateField(),
+                  _dateField(),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                _inputField(hint: 'Nama Ibu Kandung'),
+                  _inputField(hint: 'Nama Ibu Kandung'),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                _passwordField(),
+                  _passwordField(),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppThemePalette.dark(0.35),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppThemePalette.dark(0.35),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            minimumSize: const Size.fromHeight(48),
                           ),
-                          minimumSize: const Size.fromHeight(48),
+                          onPressed: () {},
+                          child: const Text('Kirim'),
                         ),
-                        onPressed: () {},
-                        child: const Text('Kirim'),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            minimumSize: const Size.fromHeight(48),
                           ),
-                          minimumSize: const Size.fromHeight(48),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Batalkan'),
                         ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text('Batalkan'),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

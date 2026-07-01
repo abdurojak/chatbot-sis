@@ -10,7 +10,14 @@ import 'package:intl/intl.dart'; // Untuk format rupiah
 import 'package:webview_flutter/webview_flutter.dart';
 
 class InvoicePage extends StatefulWidget {
-  const InvoicePage({super.key});
+  final bool skipInitialLoad;
+  final InvoiceDashboardData? initialDashboard;
+
+  const InvoicePage({
+    super.key,
+    this.skipInitialLoad = false,
+    this.initialDashboard,
+  });
 
   @override
   State<InvoicePage> createState() => _InvoicePageState();
@@ -36,7 +43,29 @@ class _InvoicePageState extends State<InvoicePage> {
   @override
   void initState() {
     super.initState();
-    fetchInvoices();
+    final dashboard = widget.initialDashboard;
+    if (dashboard != null) {
+      _applyDashboard(dashboard);
+    }
+    if (widget.skipInitialLoad) {
+      isLoading = false;
+    } else {
+      fetchInvoices();
+    }
+  }
+
+  void _applyDashboard(InvoiceDashboardData dashboard) {
+    singleInvoice = dashboard.invoices.singleInvoice;
+    detailInvoices = dashboard.invoices.detailInvoices;
+    camabaInvoices = dashboard.invoices.camabaInvoices;
+    paymentHistory = dashboard.paymentHistory;
+    openInvoiceData = dashboard.openInvoiceAction;
+    canGenerateInvoice = dashboard.openInvoiceAction != null;
+
+    selectedDetailIndexes = [
+      for (int i = 0; i < detailInvoices.length; i++)
+        if (detailInvoices[i].isCalculated) i,
+    ];
   }
 
   Future<void> fetchInvoices() async {
@@ -55,19 +84,7 @@ class _InvoicePageState extends State<InvoicePage> {
       );
       if (!mounted) return;
 
-      setState(() {
-        singleInvoice = dashboard.invoices.singleInvoice;
-        detailInvoices = dashboard.invoices.detailInvoices;
-        camabaInvoices = dashboard.invoices.camabaInvoices;
-        paymentHistory = dashboard.paymentHistory;
-        openInvoiceData = dashboard.openInvoiceAction;
-        canGenerateInvoice = dashboard.openInvoiceAction != null;
-
-        selectedDetailIndexes = [
-          for (int i = 0; i < detailInvoices.length; i++)
-            if (detailInvoices[i].isCalculated) i,
-        ];
-      });
+      setState(() => _applyDashboard(dashboard));
     } catch (e) {
       debugPrint("Error: $e");
     } finally {
@@ -95,6 +112,9 @@ class _InvoicePageState extends State<InvoicePage> {
     return total;
   }
 
+  bool get hasActiveInvoice =>
+      singleInvoice != null || camabaInvoices.isNotEmpty;
+
   void _showLoading() {
     showDialog(
       context: context,
@@ -104,7 +124,7 @@ class _InvoicePageState extends State<InvoicePage> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppThemePalette.surface,
             borderRadius: BorderRadius.circular(15),
           ),
           child: CircularProgressIndicator(
@@ -225,10 +245,10 @@ class _InvoicePageState extends State<InvoicePage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         border: Border.all(color: primaryBlue.withAlpha(128)),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+        boxShadow: [BoxShadow(color: AppThemePalette.shadow, blurRadius: 10)],
       ),
       child: Column(
         children: [
@@ -250,7 +270,7 @@ class _InvoicePageState extends State<InvoicePage> {
               Container(
                 width: 1,
                 height: 80,
-                color: Colors.grey.shade300,
+                color: AppThemePalette.divider,
                 margin: const EdgeInsets.symmetric(horizontal: 10),
               ),
               Expanded(
@@ -465,15 +485,18 @@ class _InvoicePageState extends State<InvoicePage> {
                 fontSize: 16,
               ),
             ),
-            const Divider(),
+            Divider(color: AppThemePalette.divider),
             _rowModal("Deskripsi", data.description),
             _rowModal("No. Invoice", data.billNumber),
 
             const SizedBox(height: 10),
             // --- BAGIAN VA YANG DI HIGHLIGHT ---
-            const Text(
+            Text(
               "Virtual Account",
-              style: TextStyle(fontSize: 10, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 10,
+                color: AppThemePalette.textTertiary,
+              ),
             ),
             const SizedBox(height: 4),
             _buildCopyableVA(data.va),
@@ -503,10 +526,17 @@ class _InvoicePageState extends State<InvoicePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+          Text(
+            label,
+            style: TextStyle(fontSize: 10, color: AppThemePalette.textTertiary),
+          ),
           Text(
             value,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppThemePalette.textPrimary,
+            ),
           ),
         ],
       ),
@@ -534,143 +564,156 @@ class _InvoicePageState extends State<InvoicePage> {
           maxChildSize: 0.9,
           expand: false,
           builder: (context, scrollController) {
-            return Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(10),
+            return Container(
+              color: AppThemePalette.surface,
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppThemePalette.divider,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Icon(
-                    isSuccess
-                        ? Icons.receipt_long
-                        : Icons.warning_amber_rounded,
-                    size: 50,
-                    color: isSuccess ? primaryBlue : Colors.orange,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    isSuccess ? "Rincian Tagihan Baru" : "Informasi",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 20),
+                    Icon(
+                      isSuccess
+                          ? Icons.receipt_long
+                          : Icons.warning_amber_rounded,
+                      size: 50,
+                      color: isSuccess ? primaryBlue : Colors.orange,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
-                  Text(
-                    isSuccess == true
-                        ? (invoiceData?.semesterMainName.isNotEmpty ?? false)
-                              ? invoiceData!.semesterMainName
-                              : "-"
-                        : "-",
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 12),
+                    Text(
+                      isSuccess ? "Rincian Tagihan Baru" : "Informasi",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppThemePalette.textPrimary,
+                      ),
                     ),
-                  ),
-                  const Divider(height: 32),
+                    const SizedBox(height: 8),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppThemePalette.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      isSuccess == true
+                          ? (invoiceData?.semesterMainName.isNotEmpty ?? false)
+                                ? invoiceData!.semesterMainName
+                                : "-"
+                          : "-",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppThemePalette.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Divider(height: 32, color: AppThemePalette.divider),
 
-                  if (isSuccess && invoiceData != null) ...[
-                    Expanded(
-                      child: ListView.builder(
-                        controller: scrollController,
-                        itemCount: bundleItems.length,
-                        itemBuilder: (context, index) {
-                          final item = bundleItems[index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    item.fiName,
-                                    style: const TextStyle(fontSize: 13),
+                    if (isSuccess && invoiceData != null) ...[
+                      Expanded(
+                        child: ListView.builder(
+                          controller: scrollController,
+                          itemCount: bundleItems.length,
+                          itemBuilder: (context, index) {
+                            final item = bundleItems[index];
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      item.fiName,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppThemePalette.textPrimary,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  formatRupiah(item.amount),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
+                                  Text(
+                                    formatRupiah(item.amount),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: AppThemePalette.textPrimary,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      Divider(color: AppThemePalette.divider),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Total Estimasi",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: AppThemePalette.textPrimary,
                             ),
-                          );
+                          ),
+                          Text(
+                            formatRupiah(totalAmount),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: primaryBlue,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context); // Tutup modal rincian
+                          // LANGKAH 3: Jalankan Approve dengan mengirim data lengkap invoiceData
+                          _approveInvoice(invoiceData);
                         },
-                      ),
-                    ),
-                    const Divider(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Total Estimasi",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryBlue,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        Text(
-                          formatRupiah(totalAmount),
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: primaryBlue,
+                        child: const Text("Setujui Tagihan"),
+                      ),
+                    ] else ...[
+                      const Spacer(),
+                      OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                          side: BorderSide(color: primaryBlue),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context); // Tutup modal rincian
-                        // LANGKAH 3: Jalankan Approve dengan mengirim data lengkap invoiceData
-                        _approveInvoice(invoiceData);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryBlue,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                        child: Text(
+                          "Kembali",
+                          style: TextStyle(color: primaryBlue),
                         ),
                       ),
-                      child: const Text("Setujui Tagihan"),
-                    ),
-                  ] else ...[
-                    const Spacer(),
-                    OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                        side: BorderSide(color: primaryBlue),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: Text(
-                        "Kembali",
-                        style: TextStyle(color: primaryBlue),
-                      ),
-                    ),
+                    ],
+                    const SizedBox(height: 10),
                   ],
-                  const SizedBox(height: 10),
-                ],
+                ),
               ),
             );
           },
@@ -696,7 +739,7 @@ class _InvoicePageState extends State<InvoicePage> {
         backgroundColor: AppThemePalette.background,
         appBar: AppBar(
           title: const Text("Account Statement"),
-          backgroundColor: primaryBlue,
+          backgroundColor: AppThemePalette.topBar,
           foregroundColor: Colors.white,
           bottom: const TabBar(
             indicatorColor: Colors.white, // Warna garis bawah tab aktif
@@ -728,7 +771,12 @@ class _InvoicePageState extends State<InvoicePage> {
 
   Widget _buildHistoryTab() {
     if (paymentHistory.isEmpty) {
-      return const Center(child: Text("Belum ada riwayat pembayaran"));
+      return Center(
+        child: Text(
+          "Belum ada riwayat pembayaran",
+          style: TextStyle(color: AppThemePalette.textSecondary),
+        ),
+      );
     }
 
     return ListView.builder(
@@ -742,12 +790,12 @@ class _InvoicePageState extends State<InvoicePage> {
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppThemePalette.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: primaryBlue.withAlpha(128)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha(13),
+                color: AppThemePalette.shadow,
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -763,28 +811,28 @@ class _InvoicePageState extends State<InvoicePage> {
                   Expanded(
                     child: Text(
                       item.description.isEmpty ? "-" : item.description,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
-                        color: Colors.black87,
+                        color: AppThemePalette.textPrimary,
                       ),
                     ),
                   ),
                 ],
               ),
-              const Divider(height: 24),
+              Divider(height: 24, color: AppThemePalette.divider),
               _rowHistoryDetail("No. Tagihan", item.billNumber),
               _rowHistoryDetail("Total Tagihan", formatRupiah(item.billAmount)),
 
               // TAMPILKAN CN (POTONGAN) JIKA ADA
               if (cnList.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   "Potongan / Beasiswa:",
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blueGrey,
+                    color: AppThemePalette.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -798,7 +846,7 @@ class _InvoicePageState extends State<InvoicePage> {
                 ),
               ],
 
-              const Divider(height: 24),
+              Divider(height: 24, color: AppThemePalette.divider),
               _rowHistoryDetail(
                 "Total Dibayar",
                 formatRupiah(item.billPaid),
@@ -811,9 +859,9 @@ class _InvoicePageState extends State<InvoicePage> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     "Metode: ${item.payments.first.paymentMode} • ${item.payments.first.paymentDate.split(' ').first}",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
-                      color: Colors.grey,
+                      color: AppThemePalette.textTertiary,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -828,7 +876,7 @@ class _InvoicePageState extends State<InvoicePage> {
   Widget _rowHistoryDetail(
     String label,
     String value, {
-    Color color = Colors.black87,
+    Color? color,
     bool isBold = false,
   }) {
     return Padding(
@@ -839,7 +887,10 @@ class _InvoicePageState extends State<InvoicePage> {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 12,
+                color: AppThemePalette.textTertiary,
+              ),
             ),
           ),
           Text(
@@ -847,7 +898,7 @@ class _InvoicePageState extends State<InvoicePage> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-              color: color,
+              color: color ?? AppThemePalette.textPrimary,
             ),
           ),
         ],
@@ -858,7 +909,7 @@ class _InvoicePageState extends State<InvoicePage> {
   Widget _buildBottomAction() {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Colors.white,
+      color: AppThemePalette.surface,
       child: ElevatedButton(
         onPressed: _handleCreateInvoice,
         style: ElevatedButton.styleFrom(
@@ -880,7 +931,7 @@ class _InvoicePageState extends State<InvoicePage> {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: RichText(
         text: TextSpan(
-          style: TextStyle(fontSize: 11, color: primaryBlue),
+          style: TextStyle(fontSize: 11, color: AppThemePalette.textSecondary),
           children: [
             TextSpan(
               text: "$label : ",
@@ -888,7 +939,10 @@ class _InvoicePageState extends State<InvoicePage> {
             ),
             TextSpan(
               text: value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppThemePalette.textPrimary,
+              ),
             ),
           ],
         ),
@@ -901,18 +955,23 @@ class _InvoicePageState extends State<InvoicePage> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        _buildDokuPaymentCard(),
-        const SizedBox(height: 16),
+        if (hasActiveInvoice) ...[
+          _buildDokuPaymentCard(),
+          const SizedBox(height: 16),
+        ],
         if (singleInvoice != null) _buildMainInvoiceCard(),
         if (camabaInvoices.isNotEmpty) ...[
           const SizedBox(height: 16),
           ...camabaInvoices.map((item) => _buildCamabaCard(item)),
         ],
         if (singleInvoice == null && camabaInvoices.isEmpty)
-          const Center(
+          Center(
             child: Padding(
-              padding: EdgeInsets.only(top: 50),
-              child: Text("Tidak ada tagihan aktif"),
+              padding: const EdgeInsets.only(top: 50),
+              child: Text(
+                "Tidak ada tagihan aktif",
+                style: TextStyle(color: AppThemePalette.textSecondary),
+              ),
             ),
           ),
       ],
@@ -1006,10 +1065,14 @@ class _InvoicePageState extends State<InvoicePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: isAvailable ? primaryBlue.withAlpha(26) : Colors.grey.shade100,
+        color: isAvailable
+            ? AppThemePalette.soft(0.84)
+            : AppThemePalette.mutedSurface,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isAvailable ? primaryBlue.withAlpha(77) : Colors.grey.shade300,
+          color: isAvailable
+              ? primaryBlue.withAlpha(77)
+              : AppThemePalette.divider,
         ),
       ),
       child: Row(
@@ -1020,7 +1083,7 @@ class _InvoicePageState extends State<InvoicePage> {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: isAvailable ? primaryBlue : Colors.grey,
+              color: isAvailable ? primaryBlue : AppThemePalette.textTertiary,
               letterSpacing: 1.2,
             ),
           ),
@@ -1053,12 +1116,10 @@ class _InvoicePageState extends State<InvoicePage> {
         margin: const EdgeInsets.only(top: 10),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppThemePalette.surfaceAlt,
           border: Border.all(color: primaryBlue.withAlpha(77)),
           borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 5),
-          ],
+          boxShadow: [BoxShadow(color: AppThemePalette.shadow, blurRadius: 5)],
         ),
         child: Row(
           children: [
@@ -1081,7 +1142,7 @@ class _InvoicePageState extends State<InvoicePage> {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: primaryBlue,
+                  color: AppThemePalette.textPrimary,
                 ),
               ),
             ),
@@ -1089,7 +1150,7 @@ class _InvoicePageState extends State<InvoicePage> {
               formatRupiah(item.billAmount),
               style: TextStyle(
                 fontSize: 10,
-                color: primaryBlue,
+                color: AppThemePalette.textPrimary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -1103,7 +1164,7 @@ class _InvoicePageState extends State<InvoicePage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.blueGrey.shade50,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -1113,7 +1174,7 @@ class _InvoicePageState extends State<InvoicePage> {
             child: Text(
               item.description.isEmpty ? "Paket Camaba" : item.description,
               style: TextStyle(
-                color: primaryBlue,
+                color: AppThemePalette.textPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
@@ -1122,7 +1183,7 @@ class _InvoicePageState extends State<InvoicePage> {
           Container(
             width: 1,
             height: 60,
-            color: Colors.grey.shade300,
+            color: AppThemePalette.divider,
             margin: const EdgeInsets.symmetric(horizontal: 10),
           ),
           Expanded(
@@ -1161,6 +1222,11 @@ class _DokuCheckoutDialogState extends State<_DokuCheckoutDialog> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
+          onPageStarted: (_) {
+            if (mounted) {
+              setState(() => _isLoading = true);
+            }
+          },
           onPageFinished: (_) {
             if (mounted) {
               setState(() => _isLoading = false);
@@ -1174,6 +1240,11 @@ class _DokuCheckoutDialogState extends State<_DokuCheckoutDialog> {
         ),
       )
       ..loadHtmlString(_buildCheckoutHtml(widget.paymentUrl));
+  }
+
+  Future<void> _refreshCheckout() async {
+    setState(() => _isLoading = true);
+    await _controller.reload();
   }
 
   @override
@@ -1206,6 +1277,14 @@ class _DokuCheckoutDialogState extends State<_DokuCheckoutDialog> {
                           fontWeight: FontWeight.w800,
                           fontSize: 16,
                         ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Refresh',
+                      onPressed: _refreshCheckout,
+                      icon: Icon(
+                        Icons.refresh_rounded,
+                        color: AppThemePalette.textSecondary,
                       ),
                     ),
                     IconButton(

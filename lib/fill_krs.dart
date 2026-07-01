@@ -235,7 +235,7 @@ class _PengisianKrsPageState extends State<PengisianKrsPage> {
       backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Pengisian KRS'),
-        backgroundColor: PengisianKrsPage.primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
       body: _isLoading

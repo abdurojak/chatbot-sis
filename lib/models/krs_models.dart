@@ -112,8 +112,34 @@ class KrsEnrollment {
   });
 
   factory KrsEnrollment.fromJson(Map<String, dynamic> json) {
-    final rawSchedules = json['jadwal'] as List? ?? const [];
+    return KrsEnrollment._fromJson(json, _readScheduleEntries(json['jadwal']));
+  }
 
+  static List<KrsEnrollment> listFromJson(List<dynamic> rawItems) {
+    final enrollments = <KrsEnrollment>[];
+    var previousRawSchedules = <KrsScheduleEntry>[];
+
+    for (final item in rawItems.whereType<Map>()) {
+      final json = Map<String, dynamic>.from(item);
+      final rawSchedules = _readScheduleEntries(json['jadwal']);
+      var courseSchedules = rawSchedules;
+
+      if (rawSchedules.length > previousRawSchedules.length &&
+          _startsWithSchedules(rawSchedules, previousRawSchedules)) {
+        courseSchedules = rawSchedules.sublist(previousRawSchedules.length);
+      }
+
+      enrollments.add(KrsEnrollment._fromJson(json, courseSchedules));
+      previousRawSchedules = rawSchedules;
+    }
+
+    return enrollments;
+  }
+
+  static KrsEnrollment _fromJson(
+    Map<String, dynamic> json,
+    List<KrsScheduleEntry> schedules,
+  ) {
     return KrsEnrollment(
       idRegister: _readString(json['IdRegister']),
       code: _readString(json['kodemk']),
@@ -121,13 +147,7 @@ class KrsEnrollment {
       className: _readString(json['namakelas']),
       credits: _readString(json['sks']),
       approvalStatus: _readString(json['persetujuan']),
-      schedules: rawSchedules
-          .whereType<Map>()
-          .map(
-            (item) =>
-                KrsScheduleEntry.fromJson(Map<String, dynamic>.from(item)),
-          )
-          .toList(),
+      schedules: schedules,
     );
   }
 
@@ -249,3 +269,48 @@ class CancelCourseResult {
 }
 
 String _readString(dynamic value) => value?.toString() ?? '';
+
+List<KrsScheduleEntry> _readScheduleEntries(dynamic rawSchedules) {
+  if (rawSchedules is Map) {
+    return [KrsScheduleEntry.fromJson(Map<String, dynamic>.from(rawSchedules))];
+  }
+
+  if (rawSchedules is List) {
+    return rawSchedules
+        .whereType<Map>()
+        .map(
+          (item) => KrsScheduleEntry.fromJson(Map<String, dynamic>.from(item)),
+        )
+        .toList();
+  }
+
+  return const [];
+}
+
+bool _startsWithSchedules(
+  List<KrsScheduleEntry> schedules,
+  List<KrsScheduleEntry> prefix,
+) {
+  if (prefix.isEmpty) {
+    return true;
+  }
+
+  if (schedules.length < prefix.length) {
+    return false;
+  }
+
+  for (var index = 0; index < prefix.length; index += 1) {
+    if (!_sameSchedule(schedules[index], prefix[index])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool _sameSchedule(KrsScheduleEntry left, KrsScheduleEntry right) {
+  return left.day == right.day &&
+      left.startTime == right.startTime &&
+      left.endTime == right.endTime &&
+      left.room == right.room;
+}

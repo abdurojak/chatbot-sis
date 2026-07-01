@@ -6,7 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ConvocationInvitationPage extends StatefulWidget {
-  const ConvocationInvitationPage({super.key});
+  const ConvocationInvitationPage({
+    super.key,
+    this.initialCards,
+    this.initialIdLogin = '',
+    this.skipInitialLoad = false,
+  });
+
+  final List<ConvocationInvitationCard>? initialCards;
+  final String initialIdLogin;
+  final bool skipInitialLoad;
 
   @override
   State<ConvocationInvitationPage> createState() =>
@@ -25,6 +34,12 @@ class _ConvocationInvitationPageState extends State<ConvocationInvitationPage> {
   @override
   void initState() {
     super.initState();
+    _cards = widget.initialCards ?? const [];
+    _idLogin = widget.initialIdLogin;
+    if (widget.skipInitialLoad) {
+      _isLoading = false;
+      return;
+    }
     _loadCards();
   }
 
@@ -119,9 +134,10 @@ class _ConvocationInvitationPageState extends State<ConvocationInvitationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Undangan Wisuda'),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
       body: _isLoading
@@ -136,7 +152,10 @@ class _ConvocationInvitationPageState extends State<ConvocationInvitationPage> {
                     Text(
                       _error!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(height: 1.45),
+                      style: TextStyle(
+                        color: AppThemePalette.textPrimary,
+                        height: 1.45,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     FilledButton(
@@ -159,11 +178,14 @@ class _ConvocationInvitationPageState extends State<ConvocationInvitationPage> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppThemePalette.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: primaryBlue.withAlpha(40)),
                       ),
-                      child: const Text('Belum ada data undangan.'),
+                      child: Text(
+                        'Belum ada data undangan.',
+                        style: TextStyle(color: AppThemePalette.textSecondary),
+                      ),
                     ),
                 ],
               ),
@@ -175,7 +197,7 @@ class _ConvocationInvitationPageState extends State<ConvocationInvitationPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: primaryBlue.withAlpha(35)),
       ),
@@ -191,9 +213,9 @@ class _ConvocationInvitationPageState extends State<ConvocationInvitationPage> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Gunakan tombol di bawah untuk generate/cetak undangan PDF dari server.',
-            style: TextStyle(height: 1.4, color: Color(0xFF4B5563)),
+            style: TextStyle(height: 1.4, color: AppThemePalette.textSecondary),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -230,7 +252,7 @@ class _ConvocationInvitationPageState extends State<ConvocationInvitationPage> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: primaryBlue.withAlpha(32)),
       ),
@@ -242,7 +264,8 @@ class _ConvocationInvitationPageState extends State<ConvocationInvitationPage> {
               Expanded(
                 child: Text(
                   'Undangan #${card.invitationId}',
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: AppThemePalette.textPrimary,
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
                   ),
@@ -273,8 +296,14 @@ class _ConvocationInvitationPageState extends State<ConvocationInvitationPage> {
             ],
           ),
           const SizedBox(height: 8),
-          Text('Dibuat: ${card.createdAt.isEmpty ? '-' : card.createdAt}'),
-          Text('Hadir: ${card.attendanceAt.isEmpty ? '-' : card.attendanceAt}'),
+          Text(
+            'Dibuat: ${card.createdAt.isEmpty ? '-' : card.createdAt}',
+            style: TextStyle(color: AppThemePalette.textSecondary),
+          ),
+          Text(
+            'Hadir: ${card.attendanceAt.isEmpty ? '-' : card.attendanceAt}',
+            style: TextStyle(color: AppThemePalette.textSecondary),
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,

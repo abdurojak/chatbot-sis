@@ -11,6 +11,7 @@ import 'package:chatbot/result_krs.dart';
 import 'package:chatbot/result_skpi.dart';
 import 'package:chatbot/services/krs_service.dart';
 import 'package:chatbot/services/session_service.dart';
+import 'package:chatbot/transcript_screen.dart';
 import 'package:chatbot/component/app_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -133,6 +134,42 @@ class BotActionHandle {
         );
         return true;
 
+      case 'Transaksi SKPI':
+        if (!await requireLogin()) {
+          return true;
+        }
+
+        if (!context.mounted) return true;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const HasilSkpiPage()),
+        );
+        return true;
+
+      case 'Transaksi Transkrip':
+        if (!await requireLogin()) {
+          return true;
+        }
+
+        if (!context.mounted) return true;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TranscriptPage()),
+        );
+        return true;
+
+      case 'Hasil Transkrip':
+        if (!await requireLogin()) {
+          return true;
+        }
+
+        if (!context.mounted) return true;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TranscriptPage()),
+        );
+        return true;
+
       case 'Hasil Kartu Peserta Ujian':
         if (!await requireLogin()) {
           return true;
@@ -144,7 +181,28 @@ class BotActionHandle {
         );
         return true;
 
+      case 'Transaksi Kartu Peserta Ujian':
+        if (!await requireLogin()) {
+          return true;
+        }
+        if (!context.mounted) return true;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ExamSlipPage()),
+        );
+        return true;
+
       case 'Transaksi MB Outbound Non PT':
+        if (!await requireLogin()) {
+          return true;
+        }
+        if (!context.mounted) return true;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MbkmOutboundPage()),
+        );
+        return true;
+
       case 'Hasil MB Outbound Non PT':
         if (!await requireLogin()) {
           return true;
@@ -178,7 +236,30 @@ class BotActionHandle {
         );
         return true;
 
+      case 'Status Pembayaran':
+        if (!await requireLogin()) {
+          return true;
+        }
+        if (!context.mounted) return true;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const InvoicePage()),
+        );
+        return true;
+
       case 'Transaksi Wisuda':
+        if (!await requireLogin()) {
+          return true;
+        }
+
+        if (!context.mounted) return true;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ConvocationPage()),
+        );
+        return true;
+
+      case 'Hasil Wisuda':
         if (!await requireLogin()) {
           return true;
         }

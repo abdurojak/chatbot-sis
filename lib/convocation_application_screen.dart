@@ -256,9 +256,10 @@ class _ConvocationApplicationPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Aplikasi Wisuda'),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
       body: Form(
@@ -293,7 +294,10 @@ class _ConvocationApplicationPageState
                 children: [
                   Text(
                     'Pilih ukuran yang paling nyaman, lalu cek detail ukurannya di panel bawah.',
-                    style: TextStyle(color: Colors.grey.shade700, height: 1.45),
+                    style: TextStyle(
+                      color: AppThemePalette.textSecondary,
+                      height: 1.45,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   Wrap(
@@ -317,7 +321,10 @@ class _ConvocationApplicationPageState
                 children: [
                   Text(
                     'Pilih paket foto tambahan dan simpan opsi Anda. Paket dan tambahan masih hardcoded sementara.',
-                    style: TextStyle(color: Colors.grey.shade700, height: 1.45),
+                    style: TextStyle(
+                      color: AppThemePalette.textSecondary,
+                      height: 1.45,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   Column(
@@ -516,11 +523,11 @@ class _ConvocationApplicationPageState
           colors: [primaryBlue.withAlpha(238), AppThemePalette.dark(0.1)],
         ),
         borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x14000000),
+            color: AppThemePalette.shadow,
             blurRadius: 16,
-            offset: Offset(0, 8),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -553,14 +560,14 @@ class _ConvocationApplicationPageState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: primaryBlue.withAlpha(28)),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x10000000),
+            color: AppThemePalette.shadow,
             blurRadius: 12,
-            offset: Offset(0, 5),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -614,17 +621,17 @@ class _ConvocationApplicationPageState
                   colors: [primaryBlue, AppThemePalette.dark(0.08)],
                 )
               : null,
-          color: isSelected ? null : AppThemePalette.soft(0.95),
+          color: isSelected ? null : AppThemePalette.fieldFill,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isSelected ? Colors.transparent : primaryBlue.withAlpha(28),
           ),
           boxShadow: isSelected
-              ? const [
+              ? [
                   BoxShadow(
-                    color: Color(0x18000000),
+                    color: AppThemePalette.shadow,
                     blurRadius: 12,
-                    offset: Offset(0, 5),
+                    offset: const Offset(0, 5),
                   ),
                 ]
               : const [],
@@ -646,7 +653,9 @@ class _ConvocationApplicationPageState
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: isSelected ? Colors.white70 : Colors.grey.shade700,
+                color: isSelected
+                    ? Colors.white70
+                    : AppThemePalette.textSecondary,
                 fontSize: 11,
                 height: 1.35,
                 fontWeight: FontWeight.w600,
@@ -696,7 +705,10 @@ class _ConvocationApplicationPageState
           const SizedBox(height: 12),
           Text(
             option.bodyHint,
-            style: const TextStyle(color: Color(0xFF4B5563), height: 1.45),
+            style: TextStyle(
+              color: AppThemePalette.textSecondary,
+              height: 1.45,
+            ),
           ),
           const SizedBox(height: 12),
           ...option.details.map(
@@ -710,8 +722,8 @@ class _ConvocationApplicationPageState
                   Expanded(
                     child: Text(
                       detail,
-                      style: const TextStyle(
-                        color: Color(0xFF374151),
+                      style: TextStyle(
+                        color: AppThemePalette.textPrimary,
                         height: 1.4,
                       ),
                     ),
@@ -744,7 +756,7 @@ class _ConvocationApplicationPageState
                     colors: [primaryBlue, AppThemePalette.dark(0.08)],
                   )
                 : null,
-            color: isSelected ? null : Colors.white,
+            color: isSelected ? null : AppThemePalette.surface,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: isSelected
@@ -752,11 +764,11 @@ class _ConvocationApplicationPageState
                   : primaryBlue.withAlpha(24),
             ),
             boxShadow: isSelected
-                ? const [
+                ? [
                     BoxShadow(
-                      color: Color(0x12000000),
+                      color: AppThemePalette.shadow,
                       blurRadius: 12,
-                      offset: Offset(0, 5),
+                      offset: const Offset(0, 5),
                     ),
                   ]
                 : const [],
@@ -792,7 +804,9 @@ class _ConvocationApplicationPageState
                         Text(
                           option.title,
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black87,
+                            color: isSelected
+                                ? Colors.white
+                                : AppThemePalette.textPrimary,
                             fontWeight: FontWeight.w800,
                             fontSize: 15,
                           ),
@@ -837,7 +851,7 @@ class _ConvocationApplicationPageState
                       style: TextStyle(
                         color: isSelected
                             ? Colors.white70
-                            : Colors.grey.shade700,
+                            : AppThemePalette.textSecondary,
                         height: 1.4,
                       ),
                     ),
@@ -901,7 +915,7 @@ class _ConvocationApplicationPageState
             child: Text(
               label,
               style: TextStyle(
-                color: Colors.grey.shade700,
+                color: AppThemePalette.textSecondary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -909,8 +923,8 @@ class _ConvocationApplicationPageState
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                color: Color(0xFF1F2937),
+              style: TextStyle(
+                color: AppThemePalette.textPrimary,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -934,7 +948,7 @@ class _ConvocationApplicationPageState
       ),
       subtitle: Text(
         option.subtitle,
-        style: TextStyle(color: Colors.grey.shade700, height: 1.35),
+        style: TextStyle(color: AppThemePalette.textSecondary, height: 1.35),
       ),
       onChanged: (value) {
         setState(() {

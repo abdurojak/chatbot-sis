@@ -3,6 +3,7 @@ class AuthSession {
   final String idLogin;
   final String userId;
   final String nim;
+  final String studentName;
   final String? color;
   final String? photoBase64;
   final String? active;
@@ -13,6 +14,7 @@ class AuthSession {
     required this.idLogin,
     required this.userId,
     required this.nim,
+    this.studentName = '',
     this.color,
     this.photoBase64,
     this.active,
@@ -25,6 +27,7 @@ class AuthSession {
       idLogin: _readString(json['IdLogin']),
       userId: _readString(json['userid']),
       nim: _readString(json['nim']),
+      studentName: _readString(json['stdname']),
       color: _readNullableString(json['color']),
       photoBase64: _readNullableString(json['photo']),
       active: _readNullableString(json['Active']),
@@ -43,6 +46,7 @@ class AuthSession {
       idLogin: idLogin,
       userId: userId,
       nim: nim,
+      studentName: studentName,
       color: color,
       photoBase64: photoBase64,
       active: active,

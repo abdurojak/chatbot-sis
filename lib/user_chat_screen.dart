@@ -185,7 +185,7 @@ class _UserChatDetailPageState extends State<UserChatDetailPage> {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 40, 16, 18),
       decoration: BoxDecoration(
-        color: primaryBlue,
+        color: AppThemePalette.topBar,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(26)),
       ),
       child: Row(

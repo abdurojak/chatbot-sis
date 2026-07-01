@@ -10,10 +10,12 @@ class KhsService {
   static Future<String?> getDefaultSemester({
     required String idLogin,
     required String token,
+    http.Client? client,
   }) async {
     final response = await _post(
       '/krs-requirement',
       body: {'IdLogin': idLogin, 'token': token},
+      client: client,
     );
 
     return response['body']?['IdSemesterMain']?.toString();
@@ -22,10 +24,12 @@ class KhsService {
   static Future<List<SemesterInfo>> getSemesters({
     required String idLogin,
     required String token,
+    http.Client? client,
   }) async {
     final response = await _post(
       '/get-semester',
       body: {'IdLogin': idLogin, 'token': token},
+      client: client,
     );
 
     return ((response['body']?['semester'] as List?) ?? const [])
@@ -38,10 +42,12 @@ class KhsService {
     required String idLogin,
     required String token,
     required String idSemester,
+    http.Client? client,
   }) async {
     final response = await _post(
       '/get-khs',
       body: {'IdLogin': idLogin, 'token': token, 'IdSemester': idSemester},
+      client: client,
     );
 
     return KhsResponseData.fromJson(response);
@@ -50,13 +56,24 @@ class KhsService {
   static Future<KhsPageData> fetchPageData({
     required String idLogin,
     required String token,
+    http.Client? client,
   }) async {
-    final defaultSemesterId = await getDefaultSemester(
+    final semesters = await getSemesters(
       idLogin: idLogin,
       token: token,
+      client: client,
     );
 
-    final semesters = await getSemesters(idLogin: idLogin, token: token);
+    String? defaultSemesterId;
+    try {
+      defaultSemesterId = await getDefaultSemester(
+        idLogin: idLogin,
+        token: token,
+        client: client,
+      );
+    } catch (_) {
+      defaultSemesterId = null;
+    }
 
     final resolvedSemesterId =
         semesters.any(
@@ -81,6 +98,7 @@ class KhsService {
             idLogin: idLogin,
             token: token,
             idSemester: resolvedSemesterId,
+            client: client,
           );
 
     return KhsPageData(
@@ -93,12 +111,14 @@ class KhsService {
   static Future<Map<String, dynamic>> _post(
     String path, {
     required Map<String, dynamic> body,
+    http.Client? client,
   }) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl$path'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
+    final uri = Uri.parse('$_baseUrl$path');
+    final headers = {'Content-Type': 'application/json'};
+    final encodedBody = jsonEncode(body);
+    final response = client == null
+        ? await http.post(uri, headers: headers, body: encodedBody)
+        : await client.post(uri, headers: headers, body: encodedBody);
 
     return json.decode(response.body) as Map<String, dynamic>;
   }

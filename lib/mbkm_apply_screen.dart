@@ -240,7 +240,7 @@ class _MbkmApplyPageState extends State<MbkmApplyPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pengajuan MBKM'),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
       body: _isLoading

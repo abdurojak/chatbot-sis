@@ -5,7 +5,16 @@ import 'package:chatbot/services/session_service.dart';
 import 'package:flutter/material.dart';
 
 class MbkmExchangePage extends StatefulWidget {
-  const MbkmExchangePage({super.key});
+  const MbkmExchangePage({
+    super.key,
+    this.initialData,
+    this.initialSemesterId,
+    this.skipInitialLoad = false,
+  });
+
+  final MbkmExchangeCourseData? initialData;
+  final String? initialSemesterId;
+  final bool skipInitialLoad;
 
   @override
   State<MbkmExchangePage> createState() => _MbkmExchangePageState();
@@ -18,15 +27,19 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
   String? _error;
   String? _idSemesterMain;
   MbkmExchangeCourseData? _data;
-  bool _showApplied = false;
-  bool _showInternal = false;
-  bool _showExternal = false;
+  _MbkmExchangeSection _selectedSection = _MbkmExchangeSection.applied;
 
   Color get primaryBlue => AppThemePalette.primary;
 
   @override
   void initState() {
     super.initState();
+    _data = widget.initialData;
+    _idSemesterMain = widget.initialSemesterId;
+    if (widget.skipInitialLoad) {
+      _isLoading = false;
+      return;
+    }
     _loadData();
   }
 
@@ -211,31 +224,8 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
     );
   }
 
-  void _toggleSection(_MbkmExchangeSection section) {
-    setState(() {
-      final shouldExpand = switch (section) {
-        _MbkmExchangeSection.applied => !_showApplied,
-        _MbkmExchangeSection.internal => !_showInternal,
-        _MbkmExchangeSection.external => !_showExternal,
-      };
-
-      _showApplied = false;
-      _showInternal = false;
-      _showExternal = false;
-
-      if (!shouldExpand) {
-        return;
-      }
-
-      switch (section) {
-        case _MbkmExchangeSection.applied:
-          _showApplied = true;
-        case _MbkmExchangeSection.internal:
-          _showInternal = true;
-        case _MbkmExchangeSection.external:
-          _showExternal = true;
-      }
-    });
+  void _selectSection(_MbkmExchangeSection section) {
+    setState(() => _selectedSection = section);
   }
 
   @override
@@ -259,31 +249,12 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
               .toList();
 
     return Scaffold(
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('MBKM Pertukaran Mahasiswa'),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
-      floatingActionButton: data == null
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => MbkmExchangeSchedulePage(
-                      courses: data.appliedCourses.isNotEmpty
-                          ? data.appliedCourses
-                          : data.internalCourses,
-                    ),
-                  ),
-                );
-              },
-              backgroundColor: primaryBlue,
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.calendar_month_rounded),
-              label: const Text('Jadwal'),
-            ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -291,6 +262,18 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
           : data == null
           ? const Center(
               child: Text('Data pertukaran mahasiswa tidak tersedia'),
+            )
+          : data.isUnavailable
+          ? RefreshIndicator(
+              onRefresh: _loadData,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                children: [
+                  const SizedBox(height: 80),
+                  _buildUnavailableState(data.message),
+                ],
+              ),
             )
           : RefreshIndicator(
               onRefresh: _loadData,
@@ -304,66 +287,29 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
                   SliverPersistentHeader(
                     pinned: true,
                     delegate: _StickySectionHeaderDelegate(
-                      minExtentValue: 82,
-                      maxExtentValue: 82,
+                      minExtentValue: 148,
+                      maxExtentValue: 148,
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                        child: _buildPinnedSearchBar(),
+                        child: _buildPinnedControls(
+                          appliedCount: filteredApplied.length,
+                          internalCount: filteredInternal.length,
+                          externalCount: filteredExternal.length,
+                        ),
                       ),
                     ),
                   ),
-                  ..._buildSectionSlivers(
-                    title: 'Mata Kuliah Sudah Diajukan',
-                    isExpanded: _showApplied,
-                    onToggle: () =>
-                        _toggleSection(_MbkmExchangeSection.applied),
-                    child: filteredApplied.isEmpty
-                        ? _buildEmptyState(
-                            query.isEmpty
-                                ? 'Belum ada mata kuliah yang diajukan'
-                                : 'Tidak ada hasil yang cocok di mata kuliah diajukan',
-                          )
-                        : Column(
-                            children: filteredApplied
-                                .map(
-                                  (course) => _buildAppliedCourseCard(course),
-                                )
-                                .toList(),
-                          ),
-                  ),
-                  ..._buildSectionSlivers(
-                    title: 'Mata Kuliah Internal',
-                    isExpanded: _showInternal,
-                    onToggle: () =>
-                        _toggleSection(_MbkmExchangeSection.internal),
-                    child: filteredInternal.isEmpty
-                        ? _buildEmptyState(
-                            query.isEmpty
-                                ? 'Belum ada mata kuliah internal'
-                                : 'Tidak ada hasil yang cocok di mata kuliah internal',
-                          )
-                        : Column(
-                            children: filteredInternal
-                                .map((course) => _buildCourseCard(course))
-                                .toList(),
-                          ),
-                  ),
-                  ..._buildSectionSlivers(
-                    title: 'Mata Kuliah External',
-                    isExpanded: _showExternal,
-                    onToggle: () =>
-                        _toggleSection(_MbkmExchangeSection.external),
-                    child: filteredExternal.isEmpty
-                        ? _buildEmptyState(
-                            query.isEmpty
-                                ? 'Belum ada mata kuliah external'
-                                : 'Tidak ada hasil yang cocok di mata kuliah external',
-                          )
-                        : Column(
-                            children: filteredExternal
-                                .map((course) => _buildCourseCard(course))
-                                .toList(),
-                          ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    sliver: SliverToBoxAdapter(
+                      child: _buildSelectedSection(
+                        data: data,
+                        query: query,
+                        filteredApplied: filteredApplied,
+                        filteredInternal: filteredInternal,
+                        filteredExternal: filteredExternal,
+                      ),
+                    ),
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 90)),
                 ],
@@ -372,52 +318,97 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
     );
   }
 
-  List<Widget> _buildSectionSlivers({
-    required String title,
-    required bool isExpanded,
-    required VoidCallback onToggle,
-    required Widget child,
+  Widget _buildSelectedSection({
+    required MbkmExchangeCourseData data,
+    required String query,
+    required List<MbkmExchangeAppliedCourse> filteredApplied,
+    required List<MbkmExchangeCourse> filteredInternal,
+    required List<MbkmExchangeCourse> filteredExternal,
   }) {
-    return [
-      if (isExpanded)
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: _StickySectionHeaderDelegate(
-            minExtentValue: 80,
-            maxExtentValue: 80,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: _buildSectionHeader(
-                title: title,
-                isExpanded: isExpanded,
-                onToggle: onToggle,
-                isPinned: true,
+    final title = switch (_selectedSection) {
+      _MbkmExchangeSection.applied => 'Mata Kuliah Diajukan',
+      _MbkmExchangeSection.internal => 'Mata Kuliah Internal',
+      _MbkmExchangeSection.external => 'Mata Kuliah External',
+    };
+    final emptyText = switch (_selectedSection) {
+      _MbkmExchangeSection.applied =>
+        query.isEmpty
+            ? 'Belum ada mata kuliah yang diajukan'
+            : 'Tidak ada hasil yang cocok di mata kuliah diajukan',
+      _MbkmExchangeSection.internal =>
+        query.isEmpty
+            ? 'Belum ada mata kuliah internal'
+            : 'Tidak ada hasil yang cocok di mata kuliah internal',
+      _MbkmExchangeSection.external =>
+        query.isEmpty
+            ? 'Belum ada mata kuliah external'
+            : 'Tidak ada hasil yang cocok di mata kuliah external',
+    };
+    final courses = switch (_selectedSection) {
+      _MbkmExchangeSection.applied => filteredApplied,
+      _MbkmExchangeSection.internal => filteredInternal,
+      _MbkmExchangeSection.external => filteredExternal,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildContentToolbar(title, data),
+        const SizedBox(height: 12),
+        if (courses.isEmpty)
+          _buildEmptyState(emptyText)
+        else
+          ...courses.map((course) {
+            if (course is MbkmExchangeAppliedCourse) {
+              return _buildAppliedCourseCard(course);
+            }
+            return _buildCourseCard(course);
+          }),
+      ],
+    );
+  }
+
+  Widget _buildContentToolbar(String title, MbkmExchangeCourseData data) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              color: AppThemePalette.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        FilledButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MbkmExchangeSchedulePage(
+                  courses: data.appliedCourses.isNotEmpty
+                      ? data.appliedCourses
+                      : data.internalCourses,
+                ),
               ),
-            ),
+            );
+          },
+          style: FilledButton.styleFrom(
+            backgroundColor: primaryBlue,
+            foregroundColor: Colors.white,
+            visualDensity: VisualDensity.compact,
           ),
-        )
-      else
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-          sliver: SliverToBoxAdapter(
-            child: _buildSectionHeader(
-              title: title,
-              isExpanded: isExpanded,
-              onToggle: onToggle,
-            ),
-          ),
+          icon: const Icon(Icons.calendar_month_rounded, size: 18),
+          label: const Text('Jadwal'),
         ),
-      if (isExpanded)
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          sliver: SliverToBoxAdapter(child: child),
-        ),
-    ];
+      ],
+    );
   }
 
   Widget _buildHeroCard(MbkmExchangeCourseData data) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -436,25 +427,8 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Container(
-          //   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          //   decoration: BoxDecoration(
-          //     color: Colors.white.withAlpha(28),
-          //     borderRadius: BorderRadius.circular(999),
-          //     border: Border.all(color: Colors.white24),
-          //   ),
-          //   child: const Text(
-          //     'Exchange Course Hub',
-          //     style: TextStyle(
-          //       color: Colors.white,
-          //       fontSize: 11,
-          //       fontWeight: FontWeight.w700,
-          //     ),
-          //   ),
-          // ),
-          const SizedBox(height: 12),
           const Text(
-            'MBKM Pertukaran Mahasiswa',
+            'Pertukaran Mahasiswa',
             style: TextStyle(
               color: Colors.white,
               fontSize: 20,
@@ -462,10 +436,127 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
               height: 1.3,
             ),
           ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _buildHeroStat(
+                  value: data.appliedCourses.length.toString(),
+                  label: 'Diajukan',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildHeroStat(
+                  value: data.internalCourses.length.toString(),
+                  label: 'Internal',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildHeroStat(
+                  value: data.externalCourses.length.toString(),
+                  label: 'External',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroStat({required String value, required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(34),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withAlpha(38)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnavailableState(String message) {
+    final displayMessage = message.isEmpty
+        ? 'Pendaftaran pertukaran mahasiswa belum dibuka'
+        : message;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppThemePalette.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppThemePalette.divider),
+        boxShadow: [
+          BoxShadow(
+            color: AppThemePalette.shadow,
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: primaryBlue.withAlpha(20),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.event_busy_rounded, color: primaryBlue, size: 28),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            displayMessage,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppThemePalette.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              height: 1.35,
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
-            'Kelola pilihan mata kuliah pertukaran mahasiswa.',
-            style: const TextStyle(color: Colors.white70, height: 1.4),
+            'Silakan cek kembali halaman ini secara berkala.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppThemePalette.textSecondary, height: 1.4),
+          ),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: _loadData,
+            style: FilledButton.styleFrom(
+              backgroundColor: primaryBlue,
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('Muat Ulang'),
           ),
         ],
       ),
@@ -506,76 +597,105 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
     );
   }
 
-  Widget _buildPinnedSearchBar() {
+  Widget _buildPinnedControls({
+    required int appliedCount,
+    required int internalCount,
+    required int externalCount,
+  }) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppThemePalette.soft(0.985),
+        color: AppThemePalette.background.withAlpha(248),
         borderRadius: BorderRadius.circular(22),
       ),
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: _buildSearchField(),
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Column(
+          children: [
+            _buildSearchField(),
+            const SizedBox(height: 10),
+            _buildSegmentedTabs(
+              appliedCount: appliedCount,
+              internalCount: internalCount,
+              externalCount: externalCount,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSectionHeader({
-    required String title,
-    required bool isExpanded,
-    required VoidCallback onToggle,
-    bool isPinned = false,
+  Widget _buildSegmentedTabs({
+    required int appliedCount,
+    required int internalCount,
+    required int externalCount,
   }) {
     return Container(
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(isPinned ? 246 : 255),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: primaryBlue.withAlpha(isPinned ? 26 : 18)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F000000),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+        color: AppThemePalette.fieldFill,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppThemePalette.divider),
+      ),
+      child: Row(
+        children: [
+          _segmentButton(
+            section: _MbkmExchangeSection.applied,
+            label: 'Diajukan',
+            count: appliedCount,
+          ),
+          _segmentButton(
+            section: _MbkmExchangeSection.internal,
+            label: 'Internal',
+            count: internalCount,
+          ),
+          _segmentButton(
+            section: _MbkmExchangeSection.external,
+            label: 'External',
+            count: externalCount,
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: onToggle,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: isPinned ? 17 : 18,
-                          fontWeight: FontWeight.w800,
-                          color: primaryBlue,
-                        ),
-                      ),
+    );
+  }
+
+  Widget _segmentButton({
+    required _MbkmExchangeSection section,
+    required String label,
+    required int count,
+  }) {
+    final isSelected = _selectedSection == section;
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _selectSection(section),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? AppThemePalette.surface : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppThemePalette.shadow,
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
                     ),
-                    const SizedBox(width: 12),
-                    AnimatedRotation(
-                      turns: isExpanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 220),
-                      child: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: primaryBlue,
-                        size: 28,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  ]
+                : null,
+          ),
+          child: Text(
+            '$label $count',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isSelected ? primaryBlue : AppThemePalette.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -585,16 +705,16 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: AppThemePalette.surface,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: primaryBlue.withAlpha(24)),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x10000000),
+            color: AppThemePalette.shadow,
             blurRadius: 12,
-            offset: Offset(0, 5),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -613,7 +733,8 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
           const SizedBox(height: 12),
           Text(
             course.subjectName,
-            style: const TextStyle(
+            style: TextStyle(
+              color: AppThemePalette.textPrimary,
               fontSize: 16,
               fontWeight: FontWeight.w800,
               height: 1.3,
@@ -622,33 +743,20 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
           const SizedBox(height: 6),
           Text(
             course.programName,
-            style: const TextStyle(
-              color: Colors.black87,
+            style: TextStyle(
+              color: AppThemePalette.textSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppThemePalette.soft(0.96),
-              borderRadius: BorderRadius.circular(16),
+          const SizedBox(height: 12),
+          _buildCourseDetailGrid([
+            _CourseDetail(label: 'Jadwal', value: course.scheduleLabel),
+            _CourseDetail(label: 'Dosen', value: course.lecturer),
+            _CourseDetail(
+              label: 'Peminat',
+              value: '${course.appliedCount} mahasiswa',
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _plainDetail(course.scheduleLabel),
-                Divider(height: 18, color: primaryBlue.withAlpha(18)),
-                const SizedBox(height: 2),
-                const SizedBox(height: 8),
-                _plainDetail(course.lecturer),
-                Divider(height: 18, color: primaryBlue.withAlpha(18)),
-                const SizedBox(height: 2),
-                const SizedBox(height: 8),
-                _plainDetail('${course.appliedCount} peminat'),
-              ],
-            ),
-          ),
+          ]),
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
@@ -691,20 +799,16 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.white, AppThemePalette.soft(0.94)],
-        ),
-        borderRadius: BorderRadius.circular(22),
+        color: AppThemePalette.surface,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: primaryBlue.withAlpha(26)),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x12000000),
+            color: AppThemePalette.shadow,
             blurRadius: 12,
-            offset: Offset(0, 5),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -729,7 +833,8 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
           const SizedBox(height: 12),
           Text(
             course.subjectName,
-            style: const TextStyle(
+            style: TextStyle(
+              color: AppThemePalette.textPrimary,
               fontSize: 16,
               fontWeight: FontWeight.w800,
               height: 1.3,
@@ -738,37 +843,18 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
           const SizedBox(height: 6),
           Text(
             course.programName,
-            style: const TextStyle(
-              color: Colors.black87,
+            style: TextStyle(
+              color: AppThemePalette.textSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _plainDetail(course.scheduleLabel),
-                Divider(height: 18, color: primaryBlue.withAlpha(18)),
-                const SizedBox(height: 2),
-                const SizedBox(height: 8),
-                _plainDetail(course.lecturer),
-                Divider(height: 18, color: primaryBlue.withAlpha(18)),
-                const SizedBox(height: 2),
-                const SizedBox(height: 8),
-                _plainDetail('Approval: ${course.approvalStatus}'),
-                Divider(height: 18, color: primaryBlue.withAlpha(18)),
-                const SizedBox(height: 2),
-                const SizedBox(height: 8),
-                _plainDetail('Remark: ${course.remark}'),
-              ],
-            ),
-          ),
+          const SizedBox(height: 12),
+          _buildCourseDetailGrid([
+            _CourseDetail(label: 'Jadwal', value: course.scheduleLabel),
+            _CourseDetail(label: 'Dosen', value: course.lecturer),
+            _CourseDetail(label: 'Approval', value: course.approvalStatus),
+            _CourseDetail(label: 'Remark', value: course.remark),
+          ]),
           if (canDelete) ...[
             const SizedBox(height: 12),
             Align(
@@ -793,11 +879,11 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppThemePalette.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: primaryBlue.withAlpha(18)),
       ),
-      child: Text(text, style: const TextStyle(color: Colors.grey)),
+      child: Text(text, style: TextStyle(color: AppThemePalette.textTertiary)),
     );
   }
 
@@ -820,14 +906,57 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
     );
   }
 
-  Widget _plainDetail(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Colors.black87,
-        fontWeight: FontWeight.w500,
-        height: 1.35,
-      ),
+  Widget _buildCourseDetailGrid(List<_CourseDetail> details) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final itemWidth = (constraints.maxWidth - 8) / 2;
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: details
+              .map(
+                (detail) => SizedBox(
+                  width: itemWidth,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppThemePalette.fieldFill,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppThemePalette.divider),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          detail.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: AppThemePalette.textTertiary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          detail.value,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: AppThemePalette.textPrimary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            height: 1.25,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+        );
+      },
     );
   }
 
@@ -849,6 +978,13 @@ class _MbkmExchangePageState extends State<MbkmExchangePage> {
       ),
     );
   }
+}
+
+class _CourseDetail {
+  final String label;
+  final String value;
+
+  const _CourseDetail({required this.label, required this.value});
 }
 
 class MbkmExchangeSchedulePage extends StatelessWidget {
@@ -891,9 +1027,10 @@ class MbkmExchangeSchedulePage extends StatelessWidget {
     );
 
     return Scaffold(
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Jadwal Pertukaran Mahasiswa'),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
       body: Column(
@@ -902,10 +1039,11 @@ class MbkmExchangeSchedulePage extends StatelessWidget {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: AppThemePalette.surface,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: const [
-                BoxShadow(color: Colors.black26, blurRadius: 8),
+              border: Border.all(color: AppThemePalette.divider),
+              boxShadow: [
+                BoxShadow(color: AppThemePalette.shadow, blurRadius: 8),
               ],
             ),
             child: Column(
@@ -919,13 +1057,17 @@ class MbkmExchangeSchedulePage extends StatelessWidget {
               ],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Schedule',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(
+                  color: AppThemePalette.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
@@ -997,14 +1139,25 @@ class MbkmExchangeSchedulePage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Expanded(child: Text(title)),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(color: AppThemePalette.textSecondary),
+            ),
+          ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: AppThemePalette.fieldFill,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(value),
+            child: Text(
+              value,
+              style: TextStyle(
+                color: AppThemePalette.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
@@ -1018,7 +1171,7 @@ class MbkmExchangeSchedulePage extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: primaryBlue,
-        border: Border.all(color: Colors.white),
+        border: Border.all(color: AppThemePalette.background),
       ),
       child: Text(text, style: const TextStyle(color: Colors.white)),
     );
@@ -1030,10 +1183,10 @@ class MbkmExchangeSchedulePage extends StatelessWidget {
       height: 50,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Colors.grey.shade300,
-        border: Border.all(color: Colors.white),
+        color: AppThemePalette.fieldFill,
+        border: Border.all(color: AppThemePalette.background),
       ),
-      child: Text(text),
+      child: Text(text, style: TextStyle(color: AppThemePalette.textPrimary)),
     );
   }
 
@@ -1042,7 +1195,10 @@ class MbkmExchangeSchedulePage extends StatelessWidget {
       return Container(
         width: 100,
         height: 50,
-        decoration: BoxDecoration(border: Border.all(color: Colors.white)),
+        decoration: BoxDecoration(
+          color: AppThemePalette.surface,
+          border: Border.all(color: AppThemePalette.background),
+        ),
       );
     }
 
@@ -1053,7 +1209,7 @@ class MbkmExchangeSchedulePage extends StatelessWidget {
       decoration: BoxDecoration(
         color: primaryBlue,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.white),
+        border: Border.all(color: AppThemePalette.background),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),

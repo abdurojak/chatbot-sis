@@ -2,7 +2,6 @@ import 'package:chatbot/component/chat_helper.dart';
 import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/services/session_service.dart';
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -16,6 +15,7 @@ class ChatDetailPage extends StatefulWidget {
 
 class ChatDetailPageState extends State<ChatDetailPage> {
   Color get primaryBlue => AppThemePalette.primary;
+  static const String _sisBotIconAsset = 'assets/images/sis_bot_icon.png';
   Color get _botBubbleColor => AppThemePalette.isDark
       ? AppThemePalette.accentAvatar
       : AppThemePalette.soft(0.9);
@@ -253,7 +253,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 40, 16, 20),
       decoration: BoxDecoration(
-        color: primaryBlue,
+        color: AppThemePalette.topBar,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Row(
@@ -266,7 +266,11 @@ class ChatDetailPageState extends State<ChatDetailPage> {
           CircleAvatar(
             radius: 22,
             backgroundColor: AppThemePalette.surface,
-            child: Icon(Icons.account_balance, color: primaryBlue),
+            child: ImageIcon(
+              const AssetImage(_sisBotIconAsset),
+              color: primaryBlue,
+              size: 26,
+            ),
           ),
 
           const SizedBox(width: 12),
@@ -363,9 +367,13 @@ class ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   Widget _inputBar() {
+    final inputFillColor = AppThemePalette.isDark
+        ? const Color(0xFF111827)
+        : const Color(0xFFE8EDF5);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-      color: primaryBlue,
+      color: AppThemePalette.topBar,
       child: Row(
         children: [
           // IconButton(
@@ -376,7 +384,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: AppThemePalette.fieldFill,
+                color: inputFillColor,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: TextField(

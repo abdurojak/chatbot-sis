@@ -10,7 +10,14 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ConvocationPage extends StatefulWidget {
-  const ConvocationPage({super.key});
+  const ConvocationPage({
+    super.key,
+    this.initialData,
+    this.skipInitialLoad = false,
+  });
+
+  final ConvocationData? initialData;
+  final bool skipInitialLoad;
 
   @override
   State<ConvocationPage> createState() => _ConvocationPageState();
@@ -27,6 +34,11 @@ class _ConvocationPageState extends State<ConvocationPage> {
   @override
   void initState() {
     super.initState();
+    _data = widget.initialData;
+    if (widget.skipInitialLoad) {
+      _isLoading = false;
+      return;
+    }
     _loadConvocation();
   }
 
@@ -276,9 +288,10 @@ class _ConvocationPageState extends State<ConvocationPage> {
     final steps = data?.buildSteps() ?? const <ConvocationStep>[];
 
     return Scaffold(
+      backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Transaksi Wisuda'),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
       body: _isLoading
@@ -293,7 +306,10 @@ class _ConvocationPageState extends State<ConvocationPage> {
                     Text(
                       _error!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(height: 1.5),
+                      style: TextStyle(
+                        color: AppThemePalette.textPrimary,
+                        height: 1.5,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
@@ -338,9 +354,9 @@ class _ConvocationPageState extends State<ConvocationPage> {
           colors: [primaryBlue.withAlpha(240), AppThemePalette.dark(0.1)],
         ),
         borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x14000000),
+            color: AppThemePalette.shadow,
             blurRadius: 16,
             offset: Offset(0, 8),
           ),
@@ -413,16 +429,17 @@ class _ConvocationPageState extends State<ConvocationPage> {
           const SizedBox(width: 12),
           Expanded(
             child: Container(
+              key: ValueKey('convocation-step-card-${step.order}'),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppThemePalette.surface,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: accent.withAlpha(50)),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x0F000000),
+                    color: AppThemePalette.shadow,
                     blurRadius: 12,
-                    offset: Offset(0, 4),
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -454,7 +471,8 @@ class _ConvocationPageState extends State<ConvocationPage> {
                   const SizedBox(height: 10),
                   Text(
                     step.title,
-                    style: const TextStyle(
+                    style: TextStyle(
+                      color: AppThemePalette.textPrimary,
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
                     ),
@@ -470,8 +488,8 @@ class _ConvocationPageState extends State<ConvocationPage> {
                   const SizedBox(height: 8),
                   Text(
                     step.description,
-                    style: const TextStyle(
-                      color: Color(0xFF4B5563),
+                    style: TextStyle(
+                      color: AppThemePalette.textSecondary,
                       height: 1.45,
                     ),
                   ),

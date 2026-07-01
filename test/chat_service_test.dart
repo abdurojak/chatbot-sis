@@ -36,6 +36,46 @@ void main() {
       });
     });
 
+    test('getContacts sends empty category for all contacts', () async {
+      final client = _RecordingClient([
+        {
+          'status': 200,
+          'body': {'data': []},
+        },
+      ]);
+
+      await ChatService.getContacts(
+        idLogin: '241149',
+        token: 'token',
+        category: '',
+        client: client,
+      );
+
+      expect(client.requestBodies.single, {
+        'IdLogin': '241149',
+        'token': 'token',
+        'category': '',
+      });
+    });
+
+    test('getContacts sends selected discussion category', () async {
+      final client = _RecordingClient([
+        {
+          'status': 200,
+          'body': {'data': []},
+        },
+      ]);
+
+      await ChatService.getContacts(
+        idLogin: '241149',
+        token: 'token',
+        category: 'Krs',
+        client: client,
+      );
+
+      expect(client.requestBodies.single['category'], 'Krs');
+    });
+
     test('getContacts parses JSON after temporary PHP notice output', () async {
       final client = _RecordingClient([
         '<br />'
@@ -46,6 +86,7 @@ void main() {
       final contacts = await ChatService.getContacts(
         idLogin: '241149',
         token: 'token',
+        category: '',
         client: client,
       );
 
@@ -106,6 +147,7 @@ void main() {
       final contacts = await ChatService.getContactsWithAutoGenerate(
         idLogin: '241149',
         token: 'token',
+        category: 'Krs',
         client: client,
       );
 
@@ -116,7 +158,59 @@ void main() {
         '/api/chat-generate-contact',
         '/api/chat-get-contact',
       ]);
+      expect(client.requestBodies.first['category'], 'Krs');
+      expect(client.requestBodies.last['category'], 'Krs');
     });
+
+    test(
+      'searchContactsWithAutoGenerate generates contacts when empty',
+      () async {
+        final client = _RecordingClient([
+          {
+            'status': 200,
+            'body': {'data': {}},
+          },
+          {
+            'status': 200,
+            'body': {'data': 'generated'},
+          },
+          {
+            'status': 200,
+            'body': {
+              'data': {
+                'kelas': {
+                  'group': [
+                    {
+                      'IdReceiver': '241149',
+                      'dt_last': '2026-05-04 12:47:45',
+                      'count_unread': '0',
+                      'name': '064102400001 JORDANE',
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ]);
+
+        final results = await ChatService.searchContactsWithAutoGenerate(
+          idLogin: '241149',
+          token: 'token',
+          keyword: 'jordane',
+          client: client,
+        );
+
+        expect(results, hasLength(1));
+        expect(results.first.contact.idReceiver, '241149');
+        expect(client.paths, [
+          '/api/chat-search-contact',
+          '/api/chat-generate-contact',
+          '/api/chat-search-contact',
+        ]);
+        expect(client.requestBodies.first['keyword'], 'jordane');
+        expect(client.requestBodies.last['keyword'], 'jordane');
+      },
+    );
   });
 }
 

@@ -42,10 +42,9 @@ class KrsService {
       body: {'IdLogin': idLogin, 'token': token, 'IdSemester': idSemester},
     );
 
-    return ((response['body']?['kelas'] as List?) ?? const [])
-        .whereType<Map>()
-        .map((item) => KrsEnrollment.fromJson(Map<String, dynamic>.from(item)))
-        .toList();
+    return KrsEnrollment.listFromJson(
+      (response['body']?['kelas'] as List?) ?? const [],
+    );
   }
 
   static Future<List<Subject>> getSubjects({

@@ -23,6 +23,19 @@ void main() {
     expect(decoration.color, AppThemePalette.accentAvatar);
   });
 
+  testWidgets('chatbot header uses custom bot image icon', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await AppThemeController.instance.updateDarkMode(false);
+
+    await tester.pumpWidget(const MaterialApp(home: ChatDetailPage()));
+    await tester.pump();
+
+    final icon = tester.widget<ImageIcon>(find.byType(ImageIcon).first);
+    final image = icon.image as AssetImage;
+
+    expect(image.assetName, 'assets/images/sis_bot_icon.png');
+  });
+
   testWidgets('chatbot menu uses accent avatar color in dark mode', (
     tester,
   ) async {

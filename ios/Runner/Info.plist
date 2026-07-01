@@ -47,6 +47,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Aplikasi membutuhkan akses kamera untuk mengambil bukti log MBKM.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Aplikasi membutuhkan autentikasi biometrik untuk membuka aplikasi.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Aplikasi membutuhkan akses galeri untuk memilih bukti log MBKM.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

@@ -13,7 +13,7 @@ class MbkmMenuPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('MBKM'),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
       body: ListView(

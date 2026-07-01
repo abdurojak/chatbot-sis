@@ -250,18 +250,29 @@ class MbkmExchangeCourseData {
   final List<MbkmExchangeCourse> internalCourses;
   final List<MbkmExchangeCourse> externalCourses;
   final List<MbkmExchangeAppliedCourse> appliedCourses;
+  final String message;
 
   const MbkmExchangeCourseData({
     required this.internalCourses,
     required this.externalCourses,
     required this.appliedCourses,
+    this.message = '',
   });
+
+  bool get isUnavailable =>
+      message.isNotEmpty &&
+      internalCourses.isEmpty &&
+      externalCourses.isEmpty &&
+      appliedCourses.isEmpty;
 
   factory MbkmExchangeCourseData.fromJson(Map<String, dynamic> json) {
     final body = json['body'] as Map<String, dynamic>? ?? const {};
-    final data = body['data'] as Map<String, dynamic>? ?? const {};
+    final message = _readString(body['message']);
+    final rawData = body['data'];
+    final data = rawData is Map<String, dynamic> ? rawData : const {};
 
     return MbkmExchangeCourseData(
+      message: message,
       internalCourses: ((data['internal'] as List?) ?? const [])
           .whereType<Map>()
           .map(

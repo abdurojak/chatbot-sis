@@ -22,11 +22,12 @@ class ChatService {
   static Future<List<ChatContact>> getContacts({
     required String idLogin,
     required String token,
+    String category = '',
     http.Client? client,
   }) async {
     final response = await _post(
       '/chat-get-contact',
-      body: {'IdLogin': idLogin, 'token': token},
+      body: {'IdLogin': idLogin, 'token': token, 'category': category},
       client: client,
     );
 
@@ -36,11 +37,13 @@ class ChatService {
   static Future<List<ChatContact>> getContactsWithAutoGenerate({
     required String idLogin,
     required String token,
+    String category = '',
     http.Client? client,
   }) async {
     final contacts = await getContacts(
       idLogin: idLogin,
       token: token,
+      category: category,
       client: client,
     );
     if (contacts.isNotEmpty) {
@@ -48,7 +51,12 @@ class ChatService {
     }
 
     await generateContacts(idLogin: idLogin, token: token, client: client);
-    return getContacts(idLogin: idLogin, token: token, client: client);
+    return getContacts(
+      idLogin: idLogin,
+      token: token,
+      category: category,
+      client: client,
+    );
   }
 
   static Future<List<ChatSearchResult>> searchContacts({
@@ -64,6 +72,31 @@ class ChatService {
     );
 
     return ChatSearchResponse.fromJson(response).results;
+  }
+
+  static Future<List<ChatSearchResult>> searchContactsWithAutoGenerate({
+    required String idLogin,
+    required String token,
+    required String keyword,
+    http.Client? client,
+  }) async {
+    final results = await searchContacts(
+      idLogin: idLogin,
+      token: token,
+      keyword: keyword,
+      client: client,
+    );
+    if (results.isNotEmpty) {
+      return results;
+    }
+
+    await generateContacts(idLogin: idLogin, token: token, client: client);
+    return searchContacts(
+      idLogin: idLogin,
+      token: token,
+      keyword: keyword,
+      client: client,
+    );
   }
 
   static Future<ChatActionResult> generateContacts({

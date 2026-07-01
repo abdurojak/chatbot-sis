@@ -292,7 +292,7 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('MBKM Outbound'),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
       backgroundColor: AppThemePalette.background,
@@ -305,7 +305,6 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  // _buildCompactHeader(),
                   if (biodata != null) ...[
                     const SizedBox(height: 10),
                     _buildStudentSummary(biodata, applications),
@@ -402,44 +401,6 @@ class _MbkmOutboundPageState extends State<MbkmOutboundPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildCompactHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [primaryBlue.withAlpha(235), AppThemePalette.dark(0.12)],
-        ),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: AppThemePalette.shadow,
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: const Row(
-        children: [
-          Icon(Icons.language_rounded, color: Colors.white),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Outbound MBKM',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

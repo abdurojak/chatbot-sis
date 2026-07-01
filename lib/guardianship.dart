@@ -123,7 +123,7 @@ class _PerwalianPageState extends State<PerwalianPage> {
       backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Perwalian Akademik'),
-        backgroundColor: PengisianKrsPage.primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
         elevation: 0,
       ),

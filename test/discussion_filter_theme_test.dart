@@ -5,13 +5,35 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('selected discussion categories and filters use avatar color', (
+  testWidgets('discussion requires login before showing categories', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
     await AppThemeController.instance.updateDarkMode(false);
 
     await tester.pumpWidget(const MaterialApp(home: DiscussionPage()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Login'), findsOneWidget);
+    expect(find.text('Pilih kategori diskusi'), findsNothing);
+    expect(find.text('Kontak'), findsNothing);
+  });
+
+  testWidgets('selected discussion categories and filters use avatar color', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'token': 'token',
+      'idLogin': '241149',
+      'userid': '241149',
+      'nim': '064102400001',
+    });
+    await AppThemeController.instance.updateDarkMode(false);
+
+    await tester.pumpWidget(const MaterialApp(home: DiscussionPage()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('All'));
     await tester.pump();
 
     final selectedCategoryContainer = tester.widget<AnimatedContainer>(

@@ -254,7 +254,7 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
       backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('KRS Saya'),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
       floatingActionButton: _selectedCourses.isNotEmpty

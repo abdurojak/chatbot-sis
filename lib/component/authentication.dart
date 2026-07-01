@@ -24,6 +24,7 @@ class AuthStorage {
   static const _keyIdLogin = 'idLogin';
   static const _keyUserId = 'userid';
   static const _keyNim = 'nim';
+  static const _keyStudentName = 'stdname';
   static const _keyColor = 'color';
   static const _keyDarkMode = 'dark_mode';
   static const _keyPhoto = 'photo';
@@ -36,6 +37,7 @@ class AuthStorage {
     required String idLogin,
     required String userId,
     required String nim,
+    String studentName = '',
     String? color,
     String? photoBase64,
     String? active,
@@ -46,6 +48,7 @@ class AuthStorage {
     await prefs.setString(_keyIdLogin, idLogin);
     await prefs.setString(_keyUserId, userId);
     await prefs.setString(_keyNim, nim);
+    await prefs.setString(_keyStudentName, studentName);
 
     if (color != null) await prefs.setString(_keyColor, color);
     if (photoBase64 != null) await prefs.setString(_keyPhoto, photoBase64);
@@ -59,6 +62,7 @@ class AuthStorage {
       idLogin: session.idLogin,
       userId: session.userId,
       nim: session.nim,
+      studentName: session.studentName,
       color: session.color,
       photoBase64: session.photoBase64,
       active: session.active,
@@ -72,6 +76,7 @@ class AuthStorage {
     final idLogin = prefs.getString(_keyIdLogin);
     final userId = prefs.getString(_keyUserId);
     final nim = prefs.getString(_keyNim);
+    final studentName = prefs.getString(_keyStudentName) ?? '';
 
     if (token == null || idLogin == null || userId == null || nim == null) {
       return null;
@@ -82,6 +87,7 @@ class AuthStorage {
       idLogin: idLogin,
       userId: userId,
       nim: nim,
+      studentName: studentName,
       color: prefs.getString(_keyColor),
       photoBase64: prefs.getString(_keyPhoto),
       active: prefs.getString(_keyActive),
@@ -150,6 +156,7 @@ class AuthStorage {
     await prefs.remove(_keyIdLogin);
     await prefs.remove(_keyUserId);
     await prefs.remove(_keyNim);
+    await prefs.remove(_keyStudentName);
     await prefs.remove(_keyColor);
     await prefs.remove(_keyDarkMode);
     await prefs.remove(_keyPhoto);
@@ -166,6 +173,7 @@ class AuthStorage {
     await prefs.setString(_keyIdLogin, idLogin);
     await prefs.setString(_keyUserId, idLogin);
     await prefs.setString(_keyNim, idLogin);
+    await prefs.setString(_keyStudentName, idLogin);
     await prefs.remove(_keyColor);
     await prefs.remove(_keyPhoto);
     await prefs.setString(_keyActive, '1');

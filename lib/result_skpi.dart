@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:chatbot/component/app_theme.dart';
 import 'package:chatbot/models/skpi_models.dart';
@@ -760,8 +759,8 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
       backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('SKPI'),
-        backgroundColor: primaryBlue,
-        foregroundColor: onPrimary,
+        backgroundColor: AppThemePalette.topBar,
+        foregroundColor: AppThemePalette.onPrimary(AppThemePalette.topBar),
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
@@ -930,22 +929,6 @@ class _HasilSkpiPageState extends State<HasilSkpiPage> {
         ],
       ),
     );
-  }
-
-  Color _tintedSurface(Color accent, [double lightAmount = 0.93]) {
-    final target = AppThemePalette.isDark
-        ? AppThemePalette.surfaceAlt
-        : Colors.white;
-    final amount = AppThemePalette.isDark ? 0.86 : lightAmount;
-    return Color.lerp(accent, target, amount) ?? target;
-  }
-
-  Color _tintedBorder(Color accent) {
-    final target = AppThemePalette.isDark
-        ? AppThemePalette.divider
-        : Colors.white;
-    final amount = AppThemePalette.isDark ? 0.62 : 0.72;
-    return Color.lerp(accent, target, amount) ?? accent;
   }
 
   Widget _buildErrorCard() {
@@ -1944,14 +1927,12 @@ class _AddHonorPageState extends State<_AddHonorPage> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryBlue = AppThemePalette.primary;
-
     return Scaffold(
       backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Penghargaan' : 'Tambah Penghargaan'),
-        backgroundColor: primaryBlue,
-        foregroundColor: AppThemePalette.onPrimary(primaryBlue),
+        backgroundColor: AppThemePalette.topBar,
+        foregroundColor: AppThemePalette.onPrimary(AppThemePalette.topBar),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -2367,14 +2348,12 @@ class _AddOrganizationPageState extends State<_AddOrganizationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryBlue = AppThemePalette.primary;
-
     return Scaffold(
       backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Organisasi' : 'Tambah Organisasi'),
-        backgroundColor: primaryBlue,
-        foregroundColor: AppThemePalette.onPrimary(primaryBlue),
+        backgroundColor: AppThemePalette.topBar,
+        foregroundColor: AppThemePalette.onPrimary(AppThemePalette.topBar),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -2789,14 +2768,12 @@ class _AddLanguagePageState extends State<_AddLanguagePage> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryBlue = AppThemePalette.primary;
-
     return Scaffold(
       backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Bahasa' : 'Tambah Bahasa'),
-        backgroundColor: primaryBlue,
-        foregroundColor: AppThemePalette.onPrimary(primaryBlue),
+        backgroundColor: AppThemePalette.topBar,
+        foregroundColor: AppThemePalette.onPrimary(AppThemePalette.topBar),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -3133,14 +3110,12 @@ class _AddSoftskillPageState extends State<_AddSoftskillPage> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryBlue = AppThemePalette.primary;
-
     return Scaffold(
       backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Softskill' : 'Tambah Softskill'),
-        backgroundColor: primaryBlue,
-        foregroundColor: AppThemePalette.onPrimary(primaryBlue),
+        backgroundColor: AppThemePalette.topBar,
+        foregroundColor: AppThemePalette.onPrimary(AppThemePalette.topBar),
       ),
       body: SafeArea(
         child: Form(
@@ -3429,14 +3404,12 @@ class _AddInternshipPageState extends State<_AddInternshipPage> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryBlue = AppThemePalette.primary;
-
     return Scaffold(
       backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Magang' : 'Tambah Magang'),
-        backgroundColor: primaryBlue,
-        foregroundColor: AppThemePalette.onPrimary(primaryBlue),
+        backgroundColor: AppThemePalette.topBar,
+        foregroundColor: AppThemePalette.onPrimary(AppThemePalette.topBar),
       ),
       body: SafeArea(
         child: Form(

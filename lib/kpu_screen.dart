@@ -409,7 +409,7 @@ class _ExamSlipPageState extends State<ExamSlipPage> {
           "Kartu Peserta Ujian",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),

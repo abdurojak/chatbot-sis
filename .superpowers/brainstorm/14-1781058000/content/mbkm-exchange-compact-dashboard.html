@@ -1,0 +1,333 @@
+<style>
+  .phone-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0 20px;
+  }
+  .phone {
+    width: 390px;
+    min-height: 780px;
+    background: #f6f8fb;
+    border: 1px solid #d7dee9;
+    border-radius: 30px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+    overflow: hidden;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #162033;
+  }
+  .appbar {
+    background: #1e73be;
+    color: white;
+    padding: 18px 18px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .back {
+    width: 34px;
+    height: 34px;
+    border-radius: 17px;
+    background: rgba(255,255,255,0.18);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+  }
+  .appbar-title {
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .body {
+    padding: 14px;
+  }
+  .hero {
+    background: linear-gradient(135deg, #1e73be, #263447);
+    border-radius: 18px;
+    padding: 16px;
+    color: white;
+    box-shadow: 0 12px 24px rgba(30, 115, 190, 0.18);
+  }
+  .hero h3 {
+    margin: 0 0 6px;
+    color: white;
+    font-size: 18px;
+    letter-spacing: 0;
+  }
+  .hero p {
+    margin: 0;
+    color: rgba(255,255,255,0.78);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .stat {
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 12px;
+    padding: 10px 8px;
+  }
+  .stat strong {
+    display: block;
+    color: white;
+    font-size: 18px;
+  }
+  .stat span {
+    display: block;
+    color: rgba(255,255,255,0.72);
+    font-size: 11px;
+    margin-top: 2px;
+  }
+  .search {
+    margin-top: 12px;
+    background: white;
+    border: 1px solid #e0e7f0;
+    border-radius: 16px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 10px;
+    color: #64748b;
+    font-size: 13px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  }
+  .segments {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    background: #e8eef7;
+    padding: 5px;
+    border-radius: 16px;
+  }
+  .segment {
+    border-radius: 12px;
+    padding: 9px 6px;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: center;
+    color: #5d6b7e;
+  }
+  .segment.active {
+    color: #1e73be;
+    background: white;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+  }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 16px 2px 10px;
+  }
+  .toolbar strong {
+    font-size: 15px;
+  }
+  .schedule {
+    border: 0;
+    border-radius: 999px;
+    background: #1e73be;
+    color: white;
+    padding: 9px 12px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .course {
+    background: white;
+    border: 1px solid #dfe7f2;
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 10px;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+  }
+  .course-top {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .chip {
+    background: #e9f2fb;
+    color: #1e73be;
+    border: 1px solid #d4e6f8;
+    padding: 5px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .course h4 {
+    margin: 0 0 5px;
+    color: #111827;
+    font-size: 15px;
+    line-height: 1.28;
+  }
+  .course .program {
+    color: #556274;
+    font-size: 12px;
+    font-weight: 650;
+  }
+  .mini {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .mini div {
+    background: #f7f9fc;
+    border-radius: 12px;
+    padding: 9px;
+    font-size: 12px;
+    color: #334155;
+    line-height: 1.3;
+  }
+  .mini b {
+    display: block;
+    font-size: 10px;
+    color: #8491a4;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .apply {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .apply button {
+    border: 0;
+    border-radius: 999px;
+    background: #1e73be;
+    color: white;
+    padding: 9px 14px;
+    font-weight: 800;
+    font-size: 12px;
+  }
+  .status {
+    border-radius: 999px;
+    padding: 7px 10px;
+    background: #ecfdf5;
+    color: #047857;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .note {
+    margin-top: 18px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    color: #475569;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+</style>
+
+<h2>Mockup: MBKM Pertukaran Mahasiswa</h2>
+<p class="subtitle">Konsep compact dashboard: lebih cepat discan, search tetap dekat, kategori jadi segment, dan kartu mata kuliah lebih ringkas.</p>
+
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="appbar">
+      <div class="back">‹</div>
+      <div class="appbar-title">MBKM Pertukaran<br>Mahasiswa</div>
+    </div>
+    <div class="body">
+      <section class="hero">
+        <h3>Pertukaran Mahasiswa</h3>
+        <p>Pilih mata kuliah internal atau external, pantau pengajuan, lalu cek jadwal sebelum mengirim pilihan berikutnya.</p>
+        <div class="stats">
+          <div class="stat"><strong>2</strong><span>Diajukan</span></div>
+          <div class="stat"><strong>18</strong><span>Internal</span></div>
+          <div class="stat"><strong>7</strong><span>External</span></div>
+        </div>
+      </section>
+
+      <div class="search">⌕ Cari mata kuliah, dosen, program, kode</div>
+
+      <div class="segments">
+        <div class="segment active">Diajukan</div>
+        <div class="segment">Internal</div>
+        <div class="segment">External</div>
+      </div>
+
+      <div class="toolbar">
+        <strong>Mata Kuliah Diajukan</strong>
+        <button class="schedule">▣ Jadwal</button>
+      </div>
+
+      <article class="course">
+        <div class="course-top">
+          <div>
+            <div class="chips">
+              <span class="chip">IF302</span>
+              <span class="chip">A</span>
+              <span class="chip">3 SKS</span>
+            </div>
+            <h4>Human Computer Interaction</h4>
+            <div class="program">Sistem Informasi</div>
+          </div>
+          <span class="status">Diajukan</span>
+        </div>
+        <div class="mini">
+          <div><b>Jadwal</b>Senin, 09:00-11:30</div>
+          <div><b>Dosen</b>Dr. Ratna Dewi</div>
+          <div><b>Approval</b>Menunggu</div>
+          <div><b>Remark</b>-</div>
+        </div>
+      </article>
+
+      <article class="course">
+        <div class="course-top">
+          <div>
+            <div class="chips">
+              <span class="chip">SI221</span>
+              <span class="chip">B</span>
+              <span class="chip">2 SKS</span>
+            </div>
+            <h4>Data Visualization</h4>
+            <div class="program">Teknik Informatika</div>
+          </div>
+          <span class="status">Diajukan</span>
+        </div>
+        <div class="mini">
+          <div><b>Jadwal</b>Rabu, 13:00-14:40</div>
+          <div><b>Dosen</b>Arief Nugroho</div>
+          <div><b>Approval</b>Disetujui</div>
+          <div><b>Remark</b>Valid</div>
+        </div>
+      </article>
+
+      <div class="toolbar">
+        <strong>Contoh tab Internal</strong>
+      </div>
+      <article class="course">
+        <div class="chips">
+          <span class="chip">MKU105</span>
+          <span class="chip">C</span>
+          <span class="chip">3 SKS</span>
+        </div>
+        <h4>Entrepreneurship and Innovation</h4>
+        <div class="program">Manajemen</div>
+        <div class="mini">
+          <div><b>Jadwal</b>Jumat, 08:00-10:30</div>
+          <div><b>Peminat</b>12 mahasiswa</div>
+        </div>
+        <div class="apply"><button>Ajukan</button></div>
+      </article>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  Perubahan utama yang saya usulkan: accordion diganti segmented tabs, hero menjadi ringkasan data, tombol Jadwal pindah ke toolbar konten, dan detail kartu dipadatkan dalam grid kecil supaya layar tidak cepat terasa panjang.
+</div>

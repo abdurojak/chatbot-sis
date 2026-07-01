@@ -3,7 +3,6 @@ import 'package:chatbot/models/khs_models.dart';
 import 'package:chatbot/models/krs_models.dart';
 import 'package:chatbot/services/khs_service.dart';
 import 'package:chatbot/services/session_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 @visibleForTesting
@@ -125,7 +124,7 @@ class _HasilKhsPageState extends State<HasilKhsPage> {
       backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Hasil KHS'),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
       body: Column(

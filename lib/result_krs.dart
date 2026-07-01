@@ -133,7 +133,7 @@ class _HasilKrsPageState extends State<HasilKrsPage> {
       backgroundColor: AppThemePalette.background,
       appBar: AppBar(
         title: const Text('Hasil KRS'),
-        backgroundColor: primaryBlue,
+        backgroundColor: AppThemePalette.topBar,
         foregroundColor: Colors.white,
       ),
       body: Column(

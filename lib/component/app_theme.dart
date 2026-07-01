@@ -31,7 +31,9 @@ class AppThemeController extends ChangeNotifier {
 
   ThemeData get themeData {
     final primaryColor = _primaryColor;
+    final topBarColor = AppThemePalette.topBar;
     final onPrimary = AppThemePalette.onPrimary(primaryColor);
+    final onTopBar = AppThemePalette.onPrimary(topBarColor);
     final brightness = _isDarkMode ? Brightness.dark : Brightness.light;
     final background = AppThemePalette.background;
     final surface = AppThemePalette.surface;
@@ -55,8 +57,8 @@ class AppThemeController extends ChangeNotifier {
       canvasColor: background,
       cardColor: surface,
       appBarTheme: AppBarTheme(
-        backgroundColor: primaryColor,
-        foregroundColor: onPrimary,
+        backgroundColor: topBarColor,
+        foregroundColor: onTopBar,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
@@ -118,9 +120,11 @@ class AppThemeController extends ChangeNotifier {
 
 class AppThemePalette {
   static const Color fallbackPrimary = Color(0xFF1E73BE);
+  static const Color darkSlateBar = Color(0xFF1E293B);
 
   static Color get primary => AppThemeController.instance.primaryColor;
   static bool get isDark => AppThemeController.instance.isDarkMode;
+  static Color get topBar => isDark ? darkSlateBar : primary;
   static Color get background =>
       isDark ? const Color(0xFF0F172A) : Colors.white;
   static Color get surface => isDark ? const Color(0xFF172033) : Colors.white;
