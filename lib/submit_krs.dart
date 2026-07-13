@@ -1,4 +1,5 @@
 import 'package:chatbot/component/app_theme.dart';
+import 'package:chatbot/component/app_loading_button.dart';
 import 'package:chatbot/models/krs_models.dart';
 import 'package:chatbot/services/krs_service.dart';
 import 'package:chatbot/services/session_service.dart';
@@ -15,6 +16,7 @@ class SubmitKrsScreen extends StatefulWidget {
 
 class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
   bool _isLoading = true;
+  bool _isDropping = false;
   String? _error;
 
   List<KrsEnrollment> _krsList = const [];
@@ -107,37 +109,49 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
   }
 
   Future<void> _cancelCourse(String otp, String idOtp) async {
+    if (_isDropping) {
+      return;
+    }
+
     final (token, idLogin) = await _getAuth();
     if (token == null || idLogin == null) {
       return;
     }
 
-    final result = await KrsService.cancelCourses(
-      idLogin: idLogin,
-      token: token,
-      otp: otp,
-      idOtp: idOtp,
-      courses: _selectedCourses,
-    );
+    setState(() => _isDropping = true);
 
-    if (!mounted) return;
+    try {
+      final result = await KrsService.cancelCourses(
+        idLogin: idLogin,
+        token: token,
+        otp: otp,
+        idOtp: idOtp,
+        courses: _selectedCourses,
+      );
 
-    Navigator.pop(context);
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          result.isSuccess
-              ? 'Berhasil drop mata kuliah'
-              : result.message.isNotEmpty
-              ? result.message
-              : 'Gagal drop mata kuliah',
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.isSuccess
+                ? 'Berhasil drop mata kuliah'
+                : result.message.isNotEmpty
+                ? result.message
+                : 'Gagal drop mata kuliah',
+          ),
         ),
-      ),
-    );
+      );
 
-    if (result.isSuccess) {
-      await _fetchKrs();
+      if (result.isSuccess) {
+        await _fetchKrs();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDropping = false);
+      }
     }
   }
 
@@ -156,61 +170,14 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
       return;
     }
 
-    final otpController = TextEditingController();
     final selectedItems = _krsList
         .where((item) => _selectedCourses.contains(item.idRegister))
         .toList();
 
-    await showDialog<void>(
+    await showDropKrsOtpSheet(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: AppThemePalette.surface,
-          surfaceTintColor: Colors.transparent,
-          title: const Text('Konfirmasi Drop MK'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ...selectedItems.map(
-                (item) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text('${item.code} - ${item.courseName}'),
-                  subtitle: Text('Kelas: ${item.className}'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: otpController,
-                style: TextStyle(color: AppThemePalette.textPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Masukkan OTP',
-                  labelStyle: TextStyle(color: AppThemePalette.textSecondary),
-                  filled: true,
-                  fillColor: AppThemePalette.fieldFill,
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppThemePalette.divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: primaryBlue, width: 1.4),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                await _cancelCourse(otpController.text, idOtp);
-              },
-              child: const Text('Drop'),
-            ),
-          ],
-        );
-      },
+      selectedItems: selectedItems,
+      onSubmit: (otp) => _cancelCourse(otp, idOtp),
     );
   }
 
@@ -405,6 +372,248 @@ class _SubmitKrsScreenState extends State<SubmitKrsScreen> {
                 ),
               ],
             ),
+    );
+  }
+}
+
+Future<void> showDropKrsOtpSheet({
+  required BuildContext context,
+  required List<KrsEnrollment> selectedItems,
+  required Future<void> Function(String otp) onSubmit,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppThemePalette.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+    ),
+    builder: (context) {
+      return _DropKrsOtpSheet(
+        selectedItems: selectedItems,
+        onSubmit: onSubmit,
+      );
+    },
+  );
+}
+
+class _DropKrsOtpSheet extends StatefulWidget {
+  final List<KrsEnrollment> selectedItems;
+  final Future<void> Function(String otp) onSubmit;
+
+  const _DropKrsOtpSheet({
+    required this.selectedItems,
+    required this.onSubmit,
+  });
+
+  @override
+  State<_DropKrsOtpSheet> createState() => _DropKrsOtpSheetState();
+}
+
+class _DropKrsOtpSheetState extends State<_DropKrsOtpSheet> {
+  final TextEditingController _otpController = TextEditingController();
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_isSubmitting) {
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    try {
+      await widget.onSubmit(_otpController.text.trim());
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return SafeArea(
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppThemePalette.divider,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: AppThemePalette.negative().withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.delete_outline_rounded,
+                      color: AppThemePalette.negative(),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Konfirmasi Drop MK',
+                          style: TextStyle(
+                            color: AppThemePalette.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Masukkan kode OTP untuk melanjutkan.',
+                          style: TextStyle(
+                            color: AppThemePalette.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              ...widget.selectedItems.map(_DropCourseCard.new),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _otpController,
+                enabled: !_isSubmitting,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _submit(),
+                style: TextStyle(
+                  color: AppThemePalette.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Kode OTP',
+                  hintText: 'Masukkan OTP',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  labelStyle: TextStyle(color: AppThemePalette.textSecondary),
+                  filled: true,
+                  fillColor: AppThemePalette.fieldFill,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppThemePalette.divider),
+                  ),
+                  disabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppThemePalette.divider),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AppThemePalette.primary,
+                      width: 1.4,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppThemePalette.textPrimary,
+                        side: BorderSide(color: AppThemePalette.divider),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text('Batal'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AppLoadingButton(
+                      label: 'Drop MK',
+                      loadingLabel: 'Memproses...',
+                      isLoading: _isSubmitting,
+                      onPressed: _submit,
+                      icon: Icons.delete_outline_rounded,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DropCourseCard extends StatelessWidget {
+  final KrsEnrollment course;
+
+  const _DropCourseCard(this.course);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppThemePalette.surfaceAlt,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppThemePalette.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            course.courseName,
+            style: TextStyle(
+              color: AppThemePalette.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            '${course.code} - Kelas ${course.className} - ${course.credits} SKS',
+            style: TextStyle(
+              color: AppThemePalette.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

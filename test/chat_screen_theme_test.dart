@@ -105,4 +105,30 @@ void main() {
     expect(firstSender, isNotEmpty);
     expect(secondSender, firstSender);
   });
+
+  testWidgets('keyboard send action submits the chatbot message', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+
+    await tester.pumpWidget(const MaterialApp(home: ChatDetailPage()));
+    await tester.pump();
+
+    final state = tester.state<ChatDetailPageState>(
+      find.byType(ChatDetailPage),
+    );
+    final input = find.byType(TextField);
+
+    expect(state.chatWidgets, hasLength(1));
+
+    await tester.enterText(input, 'cek krs');
+    await tester.testTextInput.receiveAction(TextInputAction.send);
+    await tester.pump();
+
+    expect(state.chatWidgets, hasLength(greaterThanOrEqualTo(2)));
+    expect(find.text('cek krs'), findsOneWidget);
+    expect(tester.widget<TextField>(input).controller?.text, isEmpty);
+
+    await tester.pump(const Duration(milliseconds: 100));
+  });
 }

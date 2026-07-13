@@ -381,25 +381,155 @@ class _ScheduleCourseCodeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final badgeColor = AppThemePalette.negative();
+    final badgeColor = AppThemePalette.accentAvatar;
 
-    return Container(
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: badgeColor,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        course.code,
-        style: TextStyle(
-          color: AppThemePalette.onPrimary(badgeColor),
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+    return InkWell(
+      borderRadius: BorderRadius.circular(6),
+      onTap: () => _showCourseDetail(context),
+      child: Container(
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+        decoration: BoxDecoration(
+          color: badgeColor,
+          borderRadius: BorderRadius.circular(6),
         ),
-        textAlign: TextAlign.center,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                course.courseName.isNotEmpty ? course.courseName : course.code,
+                style: TextStyle(
+                  color: AppThemePalette.textPrimary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (course.className.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                course.className,
+                style: TextStyle(
+                  color: AppThemePalette.textSecondary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
+
+  void _showCourseDetail(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppThemePalette.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  course.courseName.isNotEmpty ? course.courseName : course.code,
+                  style: TextStyle(
+                    color: AppThemePalette.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _CourseDetailRow(label: 'Kode MK', value: course.code),
+                _CourseDetailRow(label: 'Kelas', value: course.className),
+                _CourseDetailRow(label: 'SKS', value: course.credits),
+                ...course.schedules.map(
+                  (schedule) => _CourseDetailRow(
+                    label: 'Jadwal',
+                    value:
+                        '${_localizedDay(schedule.day)}, ${schedule.startTimeShort} - ${schedule.endTimeShort}',
+                  ),
+                ),
+                if (course.schedules.any((schedule) => schedule.room.isNotEmpty))
+                  ...course.schedules
+                      .where((schedule) => schedule.room.isNotEmpty)
+                      .map(
+                        (schedule) => _CourseDetailRow(
+                          label: 'Ruang',
+                          value: schedule.room,
+                        ),
+                      ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CourseDetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _CourseDetailRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final displayedValue = value.isEmpty ? '-' : value;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 92,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: AppThemePalette.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              displayedValue,
+              style: TextStyle(
+                color: AppThemePalette.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _localizedDay(String day) {
+  return switch (day) {
+    'Monday' => 'Senin',
+    'Tuesday' => 'Selasa',
+    'Wednesday' => 'Rabu',
+    'Thursday' => 'Kamis',
+    'Friday' => 'Jumat',
+    'Saturday' => 'Sabtu',
+    'Sunday' => 'Minggu',
+    _ => day,
+  };
 }

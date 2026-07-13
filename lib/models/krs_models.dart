@@ -253,6 +253,36 @@ class RegisterCourseResult {
   final String message;
 
   const RegisterCourseResult({required this.isSuccess, required this.message});
+
+  factory RegisterCourseResult.fromJson(Map<String, dynamic> json) {
+    final body = json['body'];
+    final bodyMap = body is Map
+        ? Map<String, dynamic>.from(body)
+        : const <String, dynamic>{};
+    final processStatus = _readNormalizedProcessStatus(bodyMap);
+    final message = _readString(
+      json['message'] ??
+          json['messages'] ??
+          bodyMap['message'] ??
+          bodyMap['messages'],
+    );
+    final normalizedMessage = message.toLowerCase();
+
+    final explicitSuccess =
+        processStatus == '1' ||
+        processStatus == 'true' ||
+        processStatus == 'success' ||
+        processStatus == 'berhasil';
+
+    final messageSuccess =
+        normalizedMessage.contains('berhasil') ||
+        normalizedMessage.contains('success');
+
+    return RegisterCourseResult(
+      isSuccess: explicitSuccess || messageSuccess,
+      message: message,
+    );
+  }
 }
 
 class SendOtpResult {
@@ -313,4 +343,19 @@ bool _sameSchedule(KrsScheduleEntry left, KrsScheduleEntry right) {
       left.startTime == right.startTime &&
       left.endTime == right.endTime &&
       left.room == right.room;
+}
+
+String _readNormalizedProcessStatus(Map<String, dynamic> body) {
+  for (final entry in body.entries) {
+    final normalizedKey = entry.key.toLowerCase().replaceAll(
+      RegExp(r'[\s_-]+'),
+      '',
+    );
+
+    if (normalizedKey == 'statusproses' || normalizedKey == 'statusprocess') {
+      return _readString(entry.value).toLowerCase();
+    }
+  }
+
+  return '';
 }

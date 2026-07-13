@@ -109,6 +109,7 @@ class KrsService {
     required String token,
     required String idCourse,
     required int maxSks,
+    http.Client? client,
   }) async {
     final response = await _post(
       '/register',
@@ -118,13 +119,10 @@ class KrsService {
         'IdCourse': idCourse,
         'sksmaks': maxSks.toString(),
       },
+      client: client,
     );
 
-    final isSuccess = response['body']?['status proses'] == '1';
-    return RegisterCourseResult(
-      isSuccess: isSuccess,
-      message: (response['message'] ?? response['status'] ?? '').toString(),
-    );
+    return RegisterCourseResult.fromJson(response);
   }
 
   static Future<SendOtpResult?> sendOtp({
@@ -172,13 +170,29 @@ class KrsService {
   static Future<Map<String, dynamic>> _post(
     String path, {
     required Map<String, dynamic> body,
+    http.Client? client,
   }) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl$path'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
+    final uri = Uri.parse('$_baseUrl$path');
+    final headers = {'Content-Type': 'application/json'};
+    final encodedBody = jsonEncode(body);
+    final response = client == null
+        ? await http.post(uri, headers: headers, body: encodedBody)
+        : await client.post(uri, headers: headers, body: encodedBody);
 
-    return json.decode(response.body) as Map<String, dynamic>;
+    return json.decode(_extractJsonObject(response.body))
+        as Map<String, dynamic>;
+  }
+
+  static String _extractJsonObject(String responseBody) {
+    final trimmed = responseBody.trim();
+    if (trimmed.startsWith('{')) {
+      return trimmed;
+    }
+
+    final jsonStart = trimmed.indexOf('{');
+    if (jsonStart == -1) {
+      return trimmed;
+    }
+    return trimmed.substring(jsonStart);
   }
 }

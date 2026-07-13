@@ -389,6 +389,8 @@ class ChatDetailPageState extends State<ChatDetailPage> {
               ),
               child: TextField(
                 controller: _controller,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _submitMessage(),
                 style: TextStyle(color: AppThemePalette.textPrimary),
                 decoration: InputDecoration(
                   hintText: 'Message',
@@ -403,14 +405,7 @@ class ChatDetailPageState extends State<ChatDetailPage> {
 
           IconButton(
             icon: const Icon(Icons.send, color: Colors.white),
-            onPressed: () async {
-              final text = _controller.text.trim();
-              if (text.isNotEmpty) {
-                FocusScope.of(context).unfocus();
-                _controller.clear();
-                await sendMessage(text);
-              }
-            },
+            onPressed: _submitMessage,
           ),
 
           // IconButton(
@@ -420,6 +415,17 @@ class ChatDetailPageState extends State<ChatDetailPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _submitMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+    _controller.clear();
+    await sendMessage(text);
   }
 
   Widget _botTypingBubble() {

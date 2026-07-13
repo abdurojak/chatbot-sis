@@ -89,7 +89,7 @@ void main() {
     expect(tableScroll.padding, const EdgeInsets.fromLTRB(16, 0, 16, 24));
   });
 
-  testWidgets('JadwalKrsScreen course code badge uses negative color', (
+  testWidgets('JadwalKrsScreen course badge shows course name and class', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -111,15 +111,60 @@ void main() {
       ),
     );
 
+    expect(find.text('Algoritma'), findsOneWidget);
+    expect(find.text('A'), findsOneWidget);
+    expect(find.text('IF101'), findsNothing);
+
     final badge = tester.widget<Container>(
       find
-          .ancestor(of: find.text('IF101'), matching: find.byType(Container))
+          .ancestor(of: find.text('Algoritma'), matching: find.byType(Container))
           .first,
     );
 
     expect(
       (badge.decoration! as BoxDecoration).color,
-      AppThemePalette.negative(),
+      AppThemePalette.accentAvatar,
     );
+  });
+
+  testWidgets('JadwalKrsScreen course badge opens readable detail sheet', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    await AppThemeController.instance.updateDarkMode(true);
+
+    const course = KrsEnrollment(
+      idRegister: '1',
+      code: 'IF101',
+      courseName: 'Algoritma',
+      className: 'A',
+      credits: '3',
+      approvalStatus: '0',
+      schedules: [
+        KrsScheduleEntry(
+          day: 'Monday',
+          startTime: '08:00:00',
+          endTime: '10:00:00',
+          room: 'R101',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: buildScheduleCourseCodeBadgeForTest(course)),
+      ),
+    );
+
+    await tester.tap(find.text('Algoritma'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Algoritma'), findsWidgets);
+    expect(find.text('Kode MK'), findsOneWidget);
+    expect(find.text('IF101'), findsOneWidget);
+    expect(find.text('Kelas'), findsOneWidget);
+    expect(find.text('A'), findsWidgets);
+    expect(find.text('Senin, 08:00 - 10:00'), findsOneWidget);
+    expect(find.text('R101'), findsOneWidget);
   });
 }

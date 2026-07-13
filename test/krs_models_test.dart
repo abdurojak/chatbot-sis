@@ -99,4 +99,36 @@ void main() {
       expect(enrollments[2].schedules.single.room, 'AE401');
     },
   );
+
+  test('RegisterCourseResult accepts spaced status proses success key', () {
+    final result = RegisterCourseResult.fromJson({
+      'message': 'Mata kuliah berhasil disimpan',
+      'body': {'status proses': '1'},
+    });
+
+    expect(result.isSuccess, isTrue);
+    expect(result.message, 'Mata kuliah berhasil disimpan');
+  });
+
+  test('RegisterCourseResult accepts backend success message variants', () {
+    final result = RegisterCourseResult.fromJson({
+      'status': 200,
+      'message': 'Data berhasil disimpan',
+      'body': {'status_proses': 1},
+    });
+
+    expect(result.isSuccess, isTrue);
+    expect(result.message, 'Data berhasil disimpan');
+  });
+
+  test('RegisterCourseResult does not treat plain 200 as success', () {
+    final result = RegisterCourseResult.fromJson({
+      'status': 200,
+      'message': 'Prasyarat belum terpenuhi',
+      'body': {},
+    });
+
+    expect(result.isSuccess, isFalse);
+    expect(result.message, 'Prasyarat belum terpenuhi');
+  });
 }

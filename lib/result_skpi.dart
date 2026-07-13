@@ -2025,8 +2025,8 @@ class _AddHonorPageState extends State<_AddHonorPage> {
                         _isSubmitting
                             ? 'Menyimpan...'
                             : _isEditMode
-                            ? 'Update Penghargaan'
-                            : 'Simpan Penghargaan',
+                            ? 'Update Data Penghargaan'
+                            : 'Simpan Data Penghargaan',
                       ),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -2501,8 +2501,8 @@ class _AddOrganizationPageState extends State<_AddOrganizationPage> {
                         _isSubmitting
                             ? 'Menyimpan...'
                             : _isEditMode
-                            ? 'Update Organisasi'
-                            : 'Simpan Organisasi',
+                            ? 'Update Data Organisasi'
+                            : 'Simpan Data Organisasi',
                       ),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -2871,8 +2871,8 @@ class _AddLanguagePageState extends State<_AddLanguagePage> {
                         _isSubmitting
                             ? 'Menyimpan...'
                             : _isEditMode
-                            ? 'Update Bahasa'
-                            : 'Simpan Bahasa',
+                            ? 'Update Data Bahasa Asing'
+                            : 'Simpan Data Bahasa Asing',
                       ),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -3185,8 +3185,8 @@ class _AddSoftskillPageState extends State<_AddSoftskillPage> {
                   _isSubmitting
                       ? 'Menyimpan...'
                       : _isEditMode
-                      ? 'Update Softskill'
-                      : 'Simpan Softskill',
+                      ? 'Update Data Softskill'
+                      : 'Simpan Data Softskill',
                 ),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -3478,8 +3478,8 @@ class _AddInternshipPageState extends State<_AddInternshipPage> {
                   _isSubmitting
                       ? 'Menyimpan...'
                       : _isEditMode
-                      ? 'Update Magang'
-                      : 'Simpan Magang',
+                      ? 'Update Data Magang'
+                      : 'Simpan Data Magang',
                 ),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
